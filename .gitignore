@@ -1,0 +1,18 @@
+# Release payloads belong in GitHub Releases, never Git history.
+*.tar
+*.tar.gz
+*.tgz
+*.oci
+*.zip
+*.sha256
+
+# Local verification output.
+dist/
+artifacts/
+__pycache__/
+*.pyc
+
+# Editor and operating-system files.
+.DS_Store
+.idea/
+.vscode/

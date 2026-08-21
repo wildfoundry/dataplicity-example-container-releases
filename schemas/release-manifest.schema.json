@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/wildfoundry/dataplicity-example-container-releases/raw/main/schemas/release-manifest.schema.json",
+  "title": "Dataplicity example container release manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "service",
+    "version",
+    "tag",
+    "source_repository",
+    "source_commit",
+    "built_at",
+    "oci_digest",
+    "platforms",
+    "asset"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "service": {
+      "enum": [
+        "tank-level-sim",
+        "water-table-sim",
+        "grain-silo-sim",
+        "fridge-temp-sim",
+        "hvac-sim",
+        "video-gen-sim"
+      ]
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "tag": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+/v[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "source_repository": {
+      "const": "wildfoundry/dataplicity-prelude"
+    },
+    "source_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "built_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "oci_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "platforms": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "linux/amd64",
+          "linux/arm64",
+          "linux/arm/v7"
+        ]
+      }
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "media_type",
+        "size",
+        "sha256"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+_[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?_oci\\.tar$"
+        },
+        "media_type": {
+          "const": "application/vnd.oci.image.layout.v1.tar"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}

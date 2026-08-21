@@ -1,0 +1,36 @@
+Dataplicity example container release notices
+================================================
+
+The Dataplicity-specific example workload in each release is distributed under
+LICENSE.txt.
+
+OCI archives also contain third-party operating-system packages and libraries,
+including packages from Debian and, for compatible Raspberry Pi camera builds,
+the Raspberry Pi package archive. Those components remain subject to their own
+copyright notices and licence terms. The Dataplicity licence does not replace,
+restrict, or relicense third-party components.
+
+Copyright and licence metadata for installed Debian packages is available
+inside the image under:
+
+    /usr/share/doc/*/copyright
+
+Corresponding source packages are available from the upstream distribution
+repositories identified in the image package metadata:
+
+    https://www.debian.org/distrib/packages
+    https://archive.raspberrypi.com/debian/
+
+FFmpeg and its linked libraries are distributed under their applicable
+LGPL/GPL terms as documented by the installed package and upstream project:
+
+    https://ffmpeg.org/legal.html
+
+Raspberry Pi camera packages and libcamera retain their upstream terms:
+
+    https://github.com/raspberrypi/rpicam-apps
+    https://libcamera.org/
+
+Release-specific software inventories should be generated from the OCI archive
+by the publishing workflow and attached as SBOM/provenance metadata where
+supported.

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "service": "video-gen-sim",
+  "version": "0.1.10",
+  "tag": "video-gen-sim/v0.1.10",
+  "source_repository": "wildfoundry/dataplicity-prelude",
+  "source_commit": "0123456789abcdef0123456789abcdef01234567",
+  "built_at": "2026-08-21T00:00:00Z",
+  "oci_digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "platforms": [
+    "linux/amd64",
+    "linux/arm64",
+    "linux/arm/v7"
+  ],
+  "asset": {
+    "name": "video-gen-sim_0.1.10_oci.tar",
+    "media_type": "application/vnd.oci.image.layout.v1.tar",
+    "size": 123456789,
+    "sha256": "89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567"
+  }
+}
