@@ -58,6 +58,7 @@ class Gateway:
         self.profile_points = [(instrument, point) for instrument in config.get("instruments", [])
                                for point in instrument["profile"]["points"]]
         self.poll_cursor = 0
+        self.state_cursor = 0
 
     def report(self, row):
         command = json.loads(row["payload"])
@@ -160,7 +161,13 @@ class Gateway:
         for command in pending:
             self.handle(command)
         now = time.time()
-        for equipment_id, adapter in self.adapters.items():
+        equipment = list(self.adapters.items())
+        state_deadline = time.monotonic() + 2
+        for _ in range(len(equipment)):
+            if time.monotonic() >= state_deadline:
+                break
+            equipment_id, adapter = equipment[self.state_cursor]
+            self.state_cursor = (self.state_cursor + 1) % len(equipment)
             self.agent.event("equipment.state", {"equipment_id": equipment_id,
                 "state": adapter.state(observed_at=now, now=now)},
                 instance_id=self.instance_id, durability="volatile")

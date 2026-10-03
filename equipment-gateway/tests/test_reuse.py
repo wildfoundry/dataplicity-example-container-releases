@@ -5,17 +5,60 @@ from pathlib import Path
 import sqlite3
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from equipment_gateway.journal import Journal
 from equipment_gateway.physical import SimulatedIO, PrimitiveError
 from equipment_gateway.profiles import observe, validate_profile
 from equipment_gateway.runtime import Gateway, load_config
+from equipment_gateway.integrations.profile import ProfileAdapter
 from test_gateway import FakeAgent
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class ReuseTests(unittest.TestCase):
+    def test_profile_poll_cadence_preserves_timestamp_and_marks_stale(self):
+        profile = json.loads((ROOT / "profiles/simulated-energy-scaled.json").read_text())
+        point = profile["points"][0]
+        point["register"] = 0
+        point["poll_seconds"] = 5
+        point["max_age_seconds"] = 10
+        adapter = ProfileAdapter(profile=profile, registers={point["register"]: 100})
+        property_key = point["semantic_property"]
+        first = adapter.state(observed_at=100, now=100)["properties"][property_key]
+        adapter.io.registers[point["register"]] = 200
+        cached = adapter.state(observed_at=103, now=103)["properties"][property_key]
+        self.assertEqual((cached["raw"], cached["observed_at"]), (first["raw"], 100))
+        with patch("equipment_gateway.integrations.profile.time.monotonic", side_effect=[0, 3]):
+            self.assertEqual(adapter.state(observed_at=111, now=111)["properties"][property_key]["quality"], "stale")
+        refreshed = adapter.state(observed_at=160, now=160)["properties"][property_key]
+        self.assertEqual(refreshed["raw"], [200])
+        self.assertEqual(refreshed["observed_at"], 160)
+
+    def test_missing_simulator_registers_are_missing_observations(self):
+        profile = json.loads((ROOT / "profiles/simulated-energy-scaled.json").read_text())
+        adapter = ProfileAdapter(profile=profile)
+        values = adapter.state(observed_at=100, now=100)["properties"]
+        self.assertTrue(all(value["quality"] == "missing" and value["value"] is None for value in values.values()))
+
+    def test_equipment_state_budget_resumes_at_next_adapter(self):
+        config = load_config(ROOT / "config.access-control.example.json")
+        config["equipment"].append({**deepcopy(config["equipment"][0]), "equipment_id": "entrance-2"})
+        agent = FakeAgent()
+        with tempfile.TemporaryDirectory() as tmp:
+            gateway = Gateway(config, agent, Journal(Path(tmp) / "effects.sqlite3"))
+            try:
+                with patch.object(gateway.adapters["entrance-1"], "state", return_value={}), patch("equipment_gateway.runtime.time.monotonic", side_effect=[0, 0, 3, 3]):
+                    gateway.tick()
+                states = [data for kind, data, _ in agent.events if kind == "equipment.state"]
+                self.assertEqual([data["equipment_id"] for data in states], ["entrance-1"])
+                gateway.tick()
+                states = [data for kind, data, _ in agent.events if kind == "equipment.state"]
+                self.assertEqual(states[1]["equipment_id"], "entrance-2")
+            finally:
+                gateway.close()
+
     def test_access_profile_uses_same_dispatch_io_and_reboot_deduplication(self):
         config = load_config(ROOT / "config.access-control.example.json")
         agent = FakeAgent()

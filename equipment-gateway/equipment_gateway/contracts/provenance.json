@@ -1,11 +1,11 @@
 {
   "source_repository": "wildfoundry/dataplicity-prelude",
   "source_path": "product_logic/contracts",
-  "source_commit": "1035dbc25c42ed5b69a317b190097459751f6bfa",
+  "source_commit": "bbd2fbd7ec832933ca8cdae360597f1a6b3ce0ce",
   "status": "exported",
   "sha256": {
-    "laundry-machine.v1.json": "f362e090c5a5ee9f55cdbdb677c6e233b07d72ffed0ad16ce82ce2613cad295a",
-    "laundry-capabilities.v1.schema.json": "70ac597d5350b93a5217a094d5d94227b8f22e5f9a48dc0a279da230850fdb42",
+    "laundry-machine.v1.json": "bd0a2666cbcbb593b8cd91cb1176a62738194c6db78fa2de1883eba32c0b77c3",
+    "laundry-capabilities.v1.schema.json": "3e543f89f96291f086f0c2cc307d784e576258f4822354e8848e0332ee778cd2",
     "field-device-profile.v1.schema.json": "c02e655968a178c6da16ed5f557669fd59538dd43b8773a7caa830c17cb96031"
   }
 }

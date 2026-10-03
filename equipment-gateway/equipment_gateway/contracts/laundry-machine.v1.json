@@ -1,6 +1,6 @@
 {
   "contract": "LaundryMachine",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "properties": {
     "manufacturer": {
       "label": "Manufacturer",
@@ -284,8 +284,6 @@
         },
         "required": [
           "machine_id",
-          "order_id",
-          "vend_id",
           "process_id",
           "operation_id",
           "equipment_id",
@@ -343,8 +341,6 @@
         },
         "required": [
           "machine_id",
-          "order_id",
-          "vend_id",
           "process_id",
           "operation_id",
           "seconds",
@@ -399,8 +395,6 @@
         },
         "required": [
           "machine_id",
-          "order_id",
-          "vend_id",
           "process_id",
           "operation_id",
           "equipment_id",
@@ -454,8 +448,6 @@
         },
         "required": [
           "machine_id",
-          "order_id",
-          "vend_id",
           "process_id",
           "operation_id",
           "equipment_id",
@@ -512,8 +504,6 @@
         },
         "required": [
           "machine_id",
-          "order_id",
-          "vend_id",
           "process_id",
           "operation_id",
           "enabled",
@@ -576,8 +566,6 @@
         },
         "required": [
           "machine_id",
-          "order_id",
-          "vend_id",
           "process_id",
           "operation_id",
           "amount_minor",
@@ -640,8 +628,6 @@
         },
         "required": [
           "machine_id",
-          "order_id",
-          "vend_id",
           "process_id",
           "operation_id",
           "programme",
