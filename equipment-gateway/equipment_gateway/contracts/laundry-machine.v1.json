@@ -1,0 +1,678 @@
+{
+  "contract": "LaundryMachine",
+  "version": "1.0.0",
+  "properties": {
+    "manufacturer": {
+      "label": "Manufacturer",
+      "value_schema": {
+        "type": "string"
+      },
+      "unit": ""
+    },
+    "model": {
+      "label": "Model",
+      "value_schema": {
+        "type": "string"
+      },
+      "unit": ""
+    },
+    "controller": {
+      "label": "Controller",
+      "value_schema": {
+        "type": "string"
+      },
+      "unit": ""
+    },
+    "firmware": {
+      "label": "Firmware",
+      "value_schema": {
+        "type": "string"
+      },
+      "unit": ""
+    },
+    "availability": {
+      "label": "Availability",
+      "value_schema": {
+        "type": "string",
+        "enum": [
+          "available",
+          "running",
+          "unavailable",
+          "offline",
+          "unknown"
+        ]
+      },
+      "unit": ""
+    },
+    "operating_state": {
+      "label": "Operating state",
+      "value_schema": {
+        "type": "string",
+        "enum": [
+          "idle",
+          "running",
+          "complete",
+          "fault",
+          "unknown"
+        ]
+      },
+      "unit": ""
+    },
+    "programme": {
+      "label": "Programme",
+      "value_schema": {
+        "type": "string"
+      },
+      "unit": ""
+    },
+    "stage": {
+      "label": "Stage",
+      "value_schema": {
+        "type": "string"
+      },
+      "unit": ""
+    },
+    "remaining_seconds": {
+      "label": "Remaining seconds",
+      "value_schema": {
+        "type": "number",
+        "minimum": 0
+      },
+      "unit": "s"
+    },
+    "door_open": {
+      "label": "Door open",
+      "value_schema": {
+        "type": "boolean"
+      },
+      "unit": ""
+    },
+    "door_locked": {
+      "label": "Door locked",
+      "value_schema": {
+        "type": "boolean"
+      },
+      "unit": ""
+    },
+    "price_minor": {
+      "label": "Price minor",
+      "value_schema": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "unit": "minor currency unit"
+    },
+    "amount_due_minor": {
+      "label": "Amount due minor",
+      "value_schema": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "unit": "minor currency unit"
+    },
+    "credit_minor": {
+      "label": "Credit minor",
+      "value_schema": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "unit": "minor currency unit"
+    },
+    "currency": {
+      "label": "Currency",
+      "value_schema": {
+        "type": "string"
+      },
+      "unit": ""
+    },
+    "fault_code": {
+      "label": "Fault code",
+      "value_schema": {
+        "type": "string"
+      },
+      "unit": ""
+    },
+    "out_of_service": {
+      "label": "Out of service",
+      "value_schema": {
+        "type": "boolean"
+      },
+      "unit": ""
+    },
+    "cycle_count": {
+      "label": "Cycle count",
+      "value_schema": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "unit": "cycles"
+    },
+    "vend_count": {
+      "label": "Vend count",
+      "value_schema": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "unit": "vends"
+    },
+    "operating_seconds": {
+      "label": "Operating seconds",
+      "value_schema": {
+        "type": "number",
+        "minimum": 0
+      },
+      "unit": "s"
+    },
+    "revenue_minor": {
+      "label": "Revenue minor",
+      "value_schema": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "unit": "minor currency unit"
+    }
+  },
+  "actions": {
+    "vend": {
+      "label": "Vend",
+      "safety": "unsafe_to_duplicate",
+      "confirmation": "Confirm vend on this machine.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "machine_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "order_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "vend_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "process_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "operation_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "amount_minor": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "currency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "equipment_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "effect_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "machine_id",
+          "order_id",
+          "vend_id",
+          "process_id",
+          "operation_id",
+          "amount_minor",
+          "currency",
+          "equipment_id",
+          "effect_id"
+        ]
+      }
+    },
+    "start": {
+      "label": "Start",
+      "safety": "unsafe_to_duplicate",
+      "confirmation": "Confirm start on this machine.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "machine_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "order_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "vend_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "process_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "operation_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "equipment_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "effect_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "machine_id",
+          "order_id",
+          "vend_id",
+          "process_id",
+          "operation_id",
+          "equipment_id",
+          "effect_id"
+        ]
+      }
+    },
+    "add_time": {
+      "label": "Add time",
+      "safety": "unsafe_to_duplicate",
+      "confirmation": "Confirm add time on this machine.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "machine_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "order_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "vend_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "process_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "operation_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "equipment_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "effect_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "machine_id",
+          "order_id",
+          "vend_id",
+          "process_id",
+          "operation_id",
+          "seconds",
+          "equipment_id",
+          "effect_id"
+        ]
+      }
+    },
+    "free_vend": {
+      "label": "Free vend",
+      "safety": "unsafe_to_duplicate",
+      "confirmation": "Confirm free vend on this machine.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "machine_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "order_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "vend_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "process_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "operation_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "equipment_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "effect_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "machine_id",
+          "order_id",
+          "vend_id",
+          "process_id",
+          "operation_id",
+          "equipment_id",
+          "effect_id"
+        ]
+      }
+    },
+    "reset": {
+      "label": "Reset",
+      "safety": "unsafe_to_duplicate",
+      "confirmation": "Confirm reset on this machine.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "machine_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "order_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "vend_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "process_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "operation_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "equipment_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "effect_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "machine_id",
+          "order_id",
+          "vend_id",
+          "process_id",
+          "operation_id",
+          "equipment_id",
+          "effect_id"
+        ]
+      }
+    },
+    "set_out_of_service": {
+      "label": "Set out of service",
+      "safety": "unsafe_to_duplicate",
+      "confirmation": "Confirm set out of service on this machine.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "machine_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "order_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "vend_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "process_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "operation_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "equipment_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "effect_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "machine_id",
+          "order_id",
+          "vend_id",
+          "process_id",
+          "operation_id",
+          "enabled",
+          "equipment_id",
+          "effect_id"
+        ]
+      }
+    },
+    "set_price": {
+      "label": "Set price",
+      "safety": "unsafe_to_duplicate",
+      "confirmation": "Confirm set price on this machine.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "machine_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "order_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "vend_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "process_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "operation_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "amount_minor": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "currency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "equipment_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "effect_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "machine_id",
+          "order_id",
+          "vend_id",
+          "process_id",
+          "operation_id",
+          "amount_minor",
+          "currency",
+          "equipment_id",
+          "effect_id"
+        ]
+      }
+    },
+    "set_programme": {
+      "label": "Set programme",
+      "safety": "unsafe_to_duplicate",
+      "confirmation": "Confirm set programme on this machine.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "machine_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "order_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "vend_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "process_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "operation_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "programme": {
+            "type": "string",
+            "minLength": 1
+          },
+          "options": {
+            "type": "object"
+          },
+          "equipment_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "effect_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "machine_id",
+          "order_id",
+          "vend_id",
+          "process_id",
+          "operation_id",
+          "programme",
+          "equipment_id",
+          "effect_id"
+        ]
+      }
+    }
+  },
+  "support_states": [
+    "supported",
+    "unsupported",
+    "unknown"
+  ],
+  "provenance": [
+    "machine_native",
+    "inferred",
+    "external_sensor",
+    "simulated"
+  ],
+  "outcomes": [
+    "accepted",
+    "definitely_rejected",
+    "unknown"
+  ],
+  "compatibility_levels": [
+    "L0",
+    "L1",
+    "L2",
+    "L3",
+    "L4",
+    "L5"
+  ]
+}

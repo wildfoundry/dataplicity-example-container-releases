@@ -27,7 +27,8 @@
         "grain-silo-sim",
         "fridge-temp-sim",
         "hvac-sim",
-        "video-gen-sim"
+        "video-gen-sim",
+        "equipment-gateway"
       ]
     },
     "version": {
@@ -39,7 +40,10 @@
       "pattern": "^[a-z0-9-]+/v[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
     },
     "source_repository": {
-      "const": "wildfoundry/dataplicity-prelude"
+      "enum": [
+        "wildfoundry/dataplicity-prelude",
+        "wildfoundry/dataplicity-example-container-releases"
+      ]
     },
     "source_commit": {
       "type": "string",
@@ -92,5 +96,30 @@
         }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "service": {
+            "const": "equipment-gateway"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "source_repository": {
+            "const": "wildfoundry/dataplicity-example-container-releases"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "source_repository": {
+            "const": "wildfoundry/dataplicity-prelude"
+          }
+        }
+      }
+    }
+  ]
 }

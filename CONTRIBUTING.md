@@ -1,6 +1,6 @@
 # Contributing
 
-This is an artifact-distribution repository, not the development repository.
+This distributes example artifacts and owns public `equipment-gateway` source.
 
 ## Appropriate changes
 
@@ -12,8 +12,10 @@ Pull requests may improve:
 - repository security policy; and
 - release-consumer guidance.
 
-Container source changes, feature requests, and product bugs belong in the
-private Dataplicity development workflow.
+Changes to `equipment-gateway/` include profiles, transports, machine adapters,
+tests and build assets. Its cloud semantic contracts remain owned by
+`dataplicity-prelude`; sync the versioned contract snapshots and record their
+source provenance. Other container source changes belong in the private workflow.
 
 ## Pull requests
 
@@ -22,6 +24,7 @@ private Dataplicity development workflow.
 3. Never include credentials, customer data, provisioning keys, or production
    URLs containing tokens.
 4. Run `python3 scripts/verify_repository.py`.
+   For equipment changes, install `equipment-gateway/` and run its unittest suite.
 5. Use a pull request; do not rewrite published release tags or assets.
 
 Release assets are published only by the approved source-repository workflow.

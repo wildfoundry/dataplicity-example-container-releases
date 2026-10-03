@@ -16,3 +16,7 @@ __pycache__/
 .DS_Store
 .idea/
 .vscode/
+__pycache__/
+*.egg-info/
+build/
+dist/

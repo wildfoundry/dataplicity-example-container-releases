@@ -2,8 +2,9 @@
 
 Pre-built OCI archives for Dataplicity's example device workloads.
 
-This repository publishes **release artifacts only**. Development and source
-code stay in the private Dataplicity control-plane repository. The containers
+This repository publishes release artifacts and is the canonical public source
+home for the reusable [`equipment-gateway`](equipment-gateway/README.md).
+Other example source remains in the private Dataplicity control-plane repository. The containers
 are intentionally credential-free: they communicate with the local
 Dataplicity agent, which owns cloud authentication and transfer.
 
@@ -17,6 +18,7 @@ Dataplicity agent, which owns cloud authentication and transfer.
 | `fridge-temp-sim` | Refrigeration temperature and alarm states |
 | `hvac-sim` | HVAC temperature and operating mode |
 | `video-gen-sim` | Test-pattern or real CSI/V4L2 camera capture, live preview, and archive chunks |
+| `equipment-gateway` | Capability-gated machine simulators and generic field instrumentation; physical compatibility requires separate verification |
 
 Use the Dataplicity **Device class → Software → Use an example** flow. The
 platform selects the correct immutable release and supplies the local runtime

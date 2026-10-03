@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LaundryMachine capability report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "version",
+    "properties",
+    "actions",
+    "failure_certainty",
+    "reconciliation"
+  ],
+  "properties": {
+    "contract": {
+      "const": "LaundryMachine"
+    },
+    "version": {
+      "const": "1.0.0"
+    },
+    "properties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manufacturer",
+        "model",
+        "controller",
+        "firmware",
+        "availability",
+        "operating_state",
+        "programme",
+        "stage",
+        "remaining_seconds",
+        "door_open",
+        "door_locked",
+        "price_minor",
+        "amount_due_minor",
+        "credit_minor",
+        "currency",
+        "fault_code",
+        "out_of_service",
+        "cycle_count",
+        "vend_count",
+        "operating_seconds",
+        "revenue_minor"
+      ],
+      "properties": {
+        "manufacturer": {
+          "$ref": "#/$defs/propertyCapability"
+        },
+        "model": {
+          "$ref": "#/$defs/propertyCapability"
+        },
+        "controller": {
+          "$ref": "#/$defs/propertyCapability"
+        },
+        "firmware": {
+          "$ref": "#/$defs/propertyCapability"
+        },
+        "availability": {
+          "$ref": "#/$defs/propertyCapability"
+        },
+        "operating_state": {
+          "$ref": "#/$defs/propertyCapability"
+        },
+        "programme": {
+          "$ref": "#/$defs/propertyCapability"
+        },
+        "stage": {
+          "$ref": "#/$defs/propertyCapability"
+        },
+        "remaining_seconds": {
+          "$ref": "#/$defs/propertyCapability"
+        },
+        "door_open": {
+          "$ref": "#/$defs/propertyCapability"
+        },
+        "door_locked": {
+          "$ref": "#/$defs/propertyCapability"
+        },
+        "price_minor": {
+          "$ref": "#/$defs/propertyCapability"
+        },
+        "amount_due_minor": {
+          "$ref": "#/$defs/propertyCapability"
+        },
+        "credit_minor": {
+          "$ref": "#/$defs/propertyCapability"
+        },
+        "currency": {
+          "$ref": "#/$defs/propertyCapability"
+        },
+        "fault_code": {
+          "$ref": "#/$defs/propertyCapability"
+        },
+        "out_of_service": {
+          "$ref": "#/$defs/propertyCapability"
+        },
+        "cycle_count": {
+          "$ref": "#/$defs/propertyCapability"
+        },
+        "vend_count": {
+          "$ref": "#/$defs/propertyCapability"
+        },
+        "operating_seconds": {
+          "$ref": "#/$defs/propertyCapability"
+        },
+        "revenue_minor": {
+          "$ref": "#/$defs/propertyCapability"
+        }
+      }
+    },
+    "actions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vend",
+        "start",
+        "add_time",
+        "free_vend",
+        "reset",
+        "set_out_of_service",
+        "set_price",
+        "set_programme"
+      ],
+      "properties": {
+        "vend": {
+          "$ref": "#/$defs/actionCapability"
+        },
+        "start": {
+          "$ref": "#/$defs/actionCapability"
+        },
+        "add_time": {
+          "$ref": "#/$defs/actionCapability"
+        },
+        "free_vend": {
+          "$ref": "#/$defs/actionCapability"
+        },
+        "reset": {
+          "$ref": "#/$defs/actionCapability"
+        },
+        "set_out_of_service": {
+          "$ref": "#/$defs/actionCapability"
+        },
+        "set_price": {
+          "$ref": "#/$defs/actionCapability"
+        },
+        "set_programme": {
+          "$ref": "#/$defs/actionCapability"
+        }
+      }
+    },
+    "failure_certainty": {
+      "enum": [
+        "acknowledged_reject_and_unknown",
+        "unknown_after_dispatch"
+      ]
+    },
+    "reconciliation": {
+      "enum": [
+        "supported",
+        "unsupported",
+        "unknown"
+      ]
+    }
+  },
+  "$defs": {
+    "propertyCapability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support"
+      ],
+      "properties": {
+        "support": {
+          "enum": [
+            "supported",
+            "unsupported",
+            "unknown"
+          ]
+        },
+        "provenance": {
+          "enum": [
+            "machine_native",
+            "inferred",
+            "external_sensor",
+            "simulated"
+          ]
+        },
+        "capability_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "max_age_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 86400
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "support": {
+                "const": "supported"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "provenance",
+              "capability_version",
+              "max_age_seconds"
+            ]
+          }
+        }
+      ]
+    },
+    "actionCapability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support"
+      ],
+      "properties": {
+        "support": {
+          "enum": [
+            "supported",
+            "unsupported",
+            "unknown"
+          ]
+        },
+        "provenance": {
+          "enum": [
+            "machine_native",
+            "inferred",
+            "external_sensor",
+            "simulated"
+          ]
+        },
+        "capability_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "support": {
+                "const": "supported"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "provenance",
+              "capability_version"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

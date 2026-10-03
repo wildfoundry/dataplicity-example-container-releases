@@ -17,6 +17,7 @@ SERVICES = {
     "fridge-temp-sim",
     "hvac-sim",
     "video-gen-sim",
+    "equipment-gateway",
 }
 SEMVER_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$")
 SHA_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -71,7 +72,8 @@ def main() -> None:
         fail(f"tag mismatch: expected {expected_tag}")
     if manifest.get("schema_version") != 1:
         fail("schema_version must be 1")
-    if manifest.get("source_repository") != "wildfoundry/dataplicity-prelude":
+    source = "wildfoundry/dataplicity-example-container-releases" if service == "equipment-gateway" else "wildfoundry/dataplicity-prelude"
+    if manifest.get("source_repository") != source:
         fail("source_repository is not authoritative")
     if not GIT_SHA_RE.fullmatch(str(manifest.get("source_commit", ""))):
         fail("source_commit must be a full lowercase Git SHA")
