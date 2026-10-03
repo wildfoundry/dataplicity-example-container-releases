@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 from equipment_gateway.integrations.laundry import Simulator, manufacturer_adapter, validate_action, CONTRACT
 from equipment_gateway.agent import AgentClient
+from equipment_gateway.integrations.profile import ProfileAdapter
 from equipment_gateway.contract import state_envelope
 from equipment_gateway.journal import Journal
 from equipment_gateway.modbus import crc16, parse_response, request_frame, TransportError
@@ -96,6 +97,49 @@ class JournalTests(unittest.TestCase):
 
 
 class ProfileTests(unittest.TestCase):
+    def test_large_profile_observation_contains_only_its_immutable_point(self):
+        profile = self.profile()
+        point = deepcopy(profile["points"][0])
+        point.pop("scale", None)
+        point["conversion"] = {"version": "calibration-1", "table": [[i, i / 10] for i in range(128)]}
+        profile["device_class"] = "MeasurementBank"
+        profile["points"] = [{**deepcopy(point), "key": f"quantity_{i}", "semantic_property": f"quantity_{i}"}
+                             for i in range(64)]
+        self.assertGreater(len(json.dumps(profile).encode()), 65536)
+        observation = observe(profile, "quantity_0", [10], 100)
+        original = observation.derive(100)
+        self.assertLess(len(json.dumps(original).encode()), 32768)
+        self.assertEqual(original["profile_snapshot_scope"], "point")
+        self.assertEqual([p["key"] for p in original["profile"]["points"]], ["quantity_0"])
+        profile["points"][0]["conversion"]["version"] = "calibration-2"
+        self.assertEqual(observation.derive(100), original)
+        self.assertEqual(original["value"], 1)
+
+    def test_oversized_equipment_state_is_rejected_before_opening_hardware(self):
+        profile = self.profile()
+        profile["device_class"] = "MeasurementBank"
+        point = deepcopy(profile["points"][0])
+        point["conversion"] = {"version": "calibration-1", "table": [[i, i / 10] for i in range(128)]}
+        profile["points"] = [{**deepcopy(point), "key": f"quantity_{i}", "semantic_property": f"quantity_{i}"}
+                             for i in range(64)]
+        with patch("equipment_gateway.integrations.profile.SimulatedIO") as io:
+            with self.assertRaisesRegex(ValueError, "state profile exceeds"):
+                ProfileAdapter(profile=profile)
+            io.assert_not_called()
+
+    def test_agent_refuses_oversized_payload_before_socket_call(self):
+        agent = AgentClient()
+        with patch.object(agent, "call") as call:
+            with self.assertRaisesRegex(ValueError, "byte budget"):
+                agent.event("equipment.observation", {"raw": "x" * 49152})
+            call.assert_not_called()
+
+    def test_oversized_point_provenance_is_rejected_before_polling(self):
+        profile = self.profile()
+        profile["points"][0]["unit"] = "x" * 32768
+        with self.assertRaisesRegex(ValueError, "byte budget"):
+            validate_profile(profile)
+
     def profile(self, variant="scaled"):
         return json.loads((ROOT / f"profiles/simulated-energy-{variant}.json").read_text())
 
@@ -189,6 +233,57 @@ class FakeAgent:
 
 
 class RuntimeTests(unittest.TestCase):
+    def test_inventory_is_bounded_and_republished_without_reobserving_values(self):
+        config = load_config(ROOT / "config.access-control.example.json")
+        template = config["equipment"][0]
+        for point in template["options"]["profile"]["points"]:
+            point.update(poll_seconds=200, max_age_seconds=300)
+        config["equipment"] = [{**deepcopy(template), "equipment_id": f"entrance-{i}"} for i in range(128)]
+        agent = FakeAgent()
+        with tempfile.TemporaryDirectory() as tmp:
+            gateway = Gateway(config, agent, Journal(Path(tmp) / "j.sqlite3"))
+            try:
+                with patch("equipment_gateway.runtime.time.monotonic", return_value=100), patch("equipment_gateway.runtime.time.time", return_value=100):
+                    gateway.tick()
+                inventories = [data for kind, data, _ in agent.events if kind == "equipment.gateway_inventory"]
+                self.assertEqual(sum(len(data["equipment"]) for data in inventories), 128)
+                self.assertTrue(all(len(data["equipment"]) <= 100 and len(json.dumps(data).encode()) <= 49152
+                                    for data in inventories))
+                with patch("equipment_gateway.runtime.time.monotonic", return_value=120), patch("equipment_gateway.runtime.time.time", return_value=120):
+                    gateway.tick()
+                self.assertEqual(sum(kind == "equipment.gateway_inventory" for kind, _, _ in agent.events), len(inventories))
+                with patch("equipment_gateway.runtime.time.monotonic", return_value=131), patch("equipment_gateway.runtime.time.time", return_value=131):
+                    gateway.tick()
+                self.assertEqual(sum(kind == "equipment.gateway_inventory" for kind, _, _ in agent.events), len(inventories) * 2)
+                latest = [data for kind, data, _ in agent.events if kind == "equipment.state"][-1]
+                self.assertTrue(all(value["observed_at"] == 100 for value in latest["state"]["properties"].values()))
+            finally:
+                gateway.close()
+
+    def test_command_budget_preserves_pending_work_and_observation_polling(self):
+        config = load_config(ROOT / "config.access-control.example.json")
+        agent = FakeAgent()
+        with tempfile.TemporaryDirectory() as tmp:
+            gateway = Gateway(config, agent, Journal(Path(tmp) / "j.sqlite3"))
+            clock = [100]
+            handled = []
+            def handle(command):
+                handled.append(command)
+                clock[0] += 3
+            original_call = agent.call
+            def call(method, **params):
+                if method == "GetPendingCommands":
+                    self.assertEqual(params["limit"], 8)
+                    return {"commands": ["first", "second"]}
+                return original_call(method, **params)
+            try:
+                with patch.object(agent, "call", side_effect=call), patch.object(gateway, "handle", side_effect=handle), patch("equipment_gateway.runtime.time.monotonic", side_effect=lambda: clock[0]):
+                    gateway.tick()
+                self.assertEqual(handled, ["first"])
+                self.assertTrue(any(kind == "equipment.state" for kind, _, _ in agent.events))
+            finally:
+                gateway.close()
+
     def test_missing_optional_serial_hardware_preserves_other_equipment(self):
         with tempfile.TemporaryDirectory() as tmp:
             config = load_config(ROOT / "config.example.json")

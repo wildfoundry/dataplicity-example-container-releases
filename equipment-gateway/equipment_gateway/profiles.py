@@ -10,6 +10,15 @@ import struct
 from jsonschema import Draft202012Validator
 
 SCHEMA = json.loads((Path(__file__).parent / "contracts/field-device-profile.v1.schema.json").read_text())
+MAX_POINT_SNAPSHOT_BYTES = 32768
+
+
+def point_snapshot(profile, point):
+    """Preserve conversion provenance without copying unrelated points/commands."""
+    result = {key: deepcopy(profile[key]) for key in
+              ("profile_id", "version", "device_class", "applicability", "transport", "verification")}
+    result["points"] = [deepcopy(point)]
+    return result
 
 
 def validate_profile(profile):
@@ -21,6 +30,8 @@ def validate_profile(profile):
     if profile["verification"]["status"] in {"bench_verified", "physical_verified"} and not profile["verification"]["evidence"]:
         raise ValueError("Verified profiles require evidence")
     for point in points:
+        if len(json.dumps(point_snapshot(profile, point), allow_nan=False).encode()) > MAX_POINT_SNAPSHOT_BYTES:
+            raise ValueError("Profile point observation snapshot exceeds its byte budget")
         if point["max_age_seconds"] < point["poll_seconds"]:
             raise ValueError("Freshness must allow polling interval")
         limits = point.get("valid_range")
@@ -102,7 +113,8 @@ class Observation:
         raw = json.loads(self.raw_json)
         result = {"profile_id": profile["profile_id"], "profile_version": profile["version"],
                   "profile_sha256": hashlib.sha256(self.profile_json.encode()).hexdigest(),
-                  "profile": profile, "point": self.point_key, "raw": raw,
+                  "profile": point_snapshot(profile, point), "profile_snapshot_scope": "point",
+                  "point": self.point_key, "raw": raw,
                   "observed_at": self.observed_at, "semantic_property": point["semantic_property"],
                   "unit": point["unit"], "quality": "good", "value": None}
         if self.error:

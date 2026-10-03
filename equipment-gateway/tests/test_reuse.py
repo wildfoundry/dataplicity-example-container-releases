@@ -49,7 +49,7 @@ class ReuseTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             gateway = Gateway(config, agent, Journal(Path(tmp) / "effects.sqlite3"))
             try:
-                with patch.object(gateway.adapters["entrance-1"], "state", return_value={}), patch("equipment_gateway.runtime.time.monotonic", side_effect=[0, 0, 3, 3]):
+                with patch.object(gateway.adapters["entrance-1"], "state", return_value={}), patch("equipment_gateway.runtime.time.monotonic", side_effect=[0, 0, 0, 0, 0, 3, 3]):
                     gateway.tick()
                 states = [data for kind, data, _ in agent.events if kind == "equipment.state"]
                 self.assertEqual([data["equipment_id"] for data in states], ["entrance-1"])

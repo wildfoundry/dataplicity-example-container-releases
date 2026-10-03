@@ -2,6 +2,8 @@
 import json
 import socket
 
+MAX_EVENT_PAYLOAD_BYTES = 49152
+
 
 class AgentClient:
     def __init__(self, path="/run/dataplicity/product-runtime.sock"):
@@ -23,6 +25,8 @@ class AgentClient:
         return response["result"]
 
     def event(self, event_type, payload, *, event_id=None, instance_id="", correlation_id="", durability="critical"):
+        if len(json.dumps(payload, allow_nan=False).encode()) > MAX_EVENT_PAYLOAD_BYTES:
+            raise ValueError("Equipment event exceeds its byte budget")
         return self.call("PublishProductEvent", event_type=event_type, payload=payload,
                          event_id=event_id, product_instance_id=instance_id,
                          correlation_id=correlation_id, durability=durability)

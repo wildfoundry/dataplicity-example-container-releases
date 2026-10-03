@@ -1,5 +1,6 @@
 """Declarative equipment integration over reusable physical primitives."""
 from copy import deepcopy
+import json
 import time
 
 from jsonschema import Draft202012Validator
@@ -8,11 +9,22 @@ from ..adapters import Outcome
 from ..physical import SimulatedIO, ModbusIO, SerialIO
 from ..modbus import TransportError
 from ..profiles import validate_profile, observe
+from ..agent import MAX_EVENT_PAYLOAD_BYTES
 
 
 class ProfileAdapter:
     def __init__(self, *, profile, inputs=None, counters=None, registers=None, backend="simulated"):
         self.profile = validate_profile(profile)
+        # State projections replace the whole state, so splitting properties
+        # into events would silently discard earlier readings. Reject an
+        # oversized endpoint before opening hardware instead.
+        declaration = {"equipment_id": "x" * 128, "state": {
+            "contract": self.profile["device_class"], "version": self.profile["version"],
+            "properties": {point["semantic_property"]:
+                observe(self.profile, point["key"], [65535, 65535], 1e20).derive(1e20)
+                for point in self.profile["points"]}}}
+        if len(json.dumps(declaration, allow_nan=False).encode()) > MAX_EVENT_PAYLOAD_BYTES - 4096:
+            raise ValueError("Equipment state profile exceeds its byte budget; configure points as separate instruments")
         self.backend = backend
         if backend == "simulated" and self.profile["verification"]["status"] == "simulated":
             self.io = SimulatedIO(inputs=inputs, counters=counters, registers=registers)

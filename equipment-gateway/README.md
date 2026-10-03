@@ -69,6 +69,21 @@ FlowMeter, TemperatureSensor, AmbientSensor and LeakSensor; another Device Class
 can supply its own vocabulary unchanged. Every observation preserves raw values
 and the exact profile/conversion version and digest. Scale/offset or versioned
 piecewise calibration tables derive values without rewriting historical evidence.
+The embedded `profile` is a point-scoped snapshot (`profile_snapshot_scope=point`),
+containing the selected conversion and its applicability/verification evidence;
+`profile_sha256` identifies the complete original profile, including its other
+points and commands. Individual snapshots must fit 32 KiB. This prevents a large
+multi-point profile from being repeated in every observation.
+
+Inventory declarations are republished every 30 seconds and split into events
+of at most 48 KiB and 100 entries per section. Republishing capabilities does
+not refresh the timestamps of cached physical measurements. Equipment state is
+an atomic projection, so profiles whose aggregate state exceeds the event budget
+are rejected before opening hardware; declare large measurement banks as separate
+instruments. All outgoing events have a 48 KiB byte limit. Each tick fetches at
+most eight commands and starts no further effects after its two-second command
+budget. An effect already underway finishes and is journalled before polling
+resumes; transport timeouts still bound that individual effect.
 
 Modbus addresses are zero-based protocol addresses, not `40001` notation. Bus
 addresses must be unique and serial settings consistent. Observations distinguish
