@@ -152,6 +152,10 @@ class ProfileTests(unittest.TestCase):
 
 
 class ContractTests(unittest.TestCase):
+    def test_owner_control_has_effect_correlation_without_payment_order(self):
+        validate_action("reset", {"equipment_id": "m", "effect_id": "effect-1",
+                                  "machine_id": "m", "process_id": "process-1", "operation_id": "operation-1"})
+
     def test_adapter_subsets_state_freshness_and_no_oem_claims(self):
         native, pulse = Simulator(), Simulator(mode="pulse")
         self.assertEqual(native.capabilities["contract"], pulse.capabilities["contract"])

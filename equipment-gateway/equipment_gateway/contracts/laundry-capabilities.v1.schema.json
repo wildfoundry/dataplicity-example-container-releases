@@ -16,7 +16,10 @@
       "const": "LaundryMachine"
     },
     "version": {
-      "const": "1.0.0"
+      "enum": [
+        "1.0.0",
+        "1.1.0"
+      ]
     },
     "properties": {
       "type": "object",

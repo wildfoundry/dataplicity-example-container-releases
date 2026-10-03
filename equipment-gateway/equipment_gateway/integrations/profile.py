@@ -1,5 +1,6 @@
 """Declarative equipment integration over reusable physical primitives."""
 from copy import deepcopy
+import time
 
 from jsonschema import Draft202012Validator
 
@@ -22,6 +23,9 @@ class ProfileAdapter:
         else:
             raise ValueError("Physical actuation requires an evidence-backed transport profile; simulation must be explicit")
         self.calls = 0
+        self.observations = {}
+        self.next_poll = {}
+        self.poll_cursor = 0
         self.capabilities = {"contract": self.profile["device_class"], "version": self.profile["version"],
             "failure_certainty": "acknowledged_reject_and_unknown", "reconciliation": "unsupported",
             "actions": {key: {"support": "supported", "provenance": "simulated" if backend == "simulated" else "machine_native", "capability_version": self.profile["version"]} for key in self.profile.get("commands", {})},
@@ -56,18 +60,40 @@ class ProfileAdapter:
         return Outcome("accepted", "profile_operations_complete", {"operations": results})
 
     def state(self, *, observed_at, now):
-        values = {}
-        for point in self.profile["points"]:
+        # Round-robin reads honour profile cadence. One configured transport
+        # timeout may exceed the budget; never start another read after it.
+        deadline = time.monotonic() + 2
+        points = self.profile["points"]
+        for _ in range(len(points)):
+            if time.monotonic() >= deadline:
+                break
+            point = points[self.poll_cursor]
+            self.poll_cursor = (self.poll_cursor + 1) % len(points)
+            if now < self.next_poll.get(point["key"], 0):
+                continue
             error, raw = "", None
             try:
                 if isinstance(self.io, ModbusIO):
                     raw = self.io.read_point(point)
                 else:
                     channel = point.get("source_key", point["key"])
-                    raw = self.io.inputs.get(channel) if point["datatype"] == "boolean" else self.io.counters.get(channel) if point["datatype"] == "counter" else [self.io.registers.get(point.get("register", 0) + n, 0) for n in range(2 if point["datatype"] in {"uint32", "int32", "float32"} else 1)]
+                    if point["datatype"] == "boolean":
+                        raw = self.io.inputs.get(channel)
+                    elif point["datatype"] == "counter":
+                        raw = self.io.counters.get(channel)
+                    else:
+                        addresses = [point.get("register", 0) + n for n in range(2 if point["datatype"] in {"uint32", "int32", "float32"} else 1)]
+                        raw = [self.io.registers[address] for address in addresses] if all(address in self.io.registers for address in addresses) else None
             except TransportError as exc:
                 error = exc.quality
             except OSError:
                 error = "disconnected"
-            values[point["semantic_property"]] = observe(self.profile, point["key"], raw, observed_at, error=error).derive(now)
+            self.observations[point["key"]] = observe(self.profile, point["key"], raw, observed_at, error=error)
+            self.next_poll[point["key"]] = now + point["poll_seconds"]
+        values = {
+            point["semantic_property"]: (
+                self.observations[point["key"]].derive(now) if point["key"] in self.observations
+                else observe(self.profile, point["key"], None, observed_at).derive(now)
+            ) for point in points
+        }
         return {"contract": self.profile["device_class"], "version": self.profile["version"], "properties": values}
