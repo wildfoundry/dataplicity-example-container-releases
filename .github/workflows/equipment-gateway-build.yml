@@ -1,0 +1,41 @@
+name: Equipment gateway OCI build
+on:
+  push:
+    branches: [main]
+    paths: ["equipment-gateway/**", "scripts/**", "schemas/**", ".github/workflows/equipment-gateway*.yml"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Source package version to prepare for release
+        required: true
+        default: "0.1.0"
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+      - name: Build multi-platform OCI bundle
+        env:
+          REQUESTED_VERSION: ${{ inputs.version || '0.1.0' }}
+        run: |
+          python3 -c 'import os,tomllib; assert os.environ["REQUESTED_VERSION"] == tomllib.load(open("equipment-gateway/pyproject.toml","rb"))["project"]["version"]'
+          mkdir -p release-assets
+          docker buildx build equipment-gateway --platform linux/amd64,linux/arm64 --provenance=false --sbom=false --metadata-file build-metadata.json --output "type=oci,dest=release-assets/equipment-gateway_${REQUESTED_VERSION}_oci.tar"
+          python3 scripts/build_equipment_manifest.py release-assets --version "$REQUESTED_VERSION" --metadata build-metadata.json
+          python3 scripts/verify_release.py release-assets --tag "equipment-gateway/v${REQUESTED_VERSION}"
+      - uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        if: github.event_name != 'pull_request'
+        with:
+          subject-path: release-assets/*_oci.tar
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: equipment-gateway-release-assets
+          path: release-assets/
