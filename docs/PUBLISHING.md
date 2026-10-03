@@ -2,7 +2,18 @@
 
 Example containers are built in the private
 `wildfoundry/dataplicity-prelude` repository. This public repository is a
-distribution boundary and must not receive private source code.
+distribution boundary and must not receive private source code. The reusable
+`equipment-gateway` is the explicit exception: its canonical public source and
+build workflow live here. Its manifest identifies this repository as its source.
+
+## Equipment gateway qualification assets
+
+`equipment-gateway.yml` tests the package and builds amd64/arm64 OCI assets from
+the checked-out source commit. A manual run accepts a semantic version that must
+match `pyproject.toml`, and uploads the complete checksum-verified release bundle
+as an Actions artifact. Maintainers follow the publication sequence below to
+publish that reviewed bundle as `equipment-gateway/v<version>`; the build workflow
+does not replace a published release or grant production/hardware acceptance.
 
 ## Authentication
 

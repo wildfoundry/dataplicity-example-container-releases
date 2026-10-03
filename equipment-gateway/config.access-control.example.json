@@ -1,0 +1,107 @@
+{
+  "schema_version": 2,
+  "product_instance_id": "access-example-instance",
+  "equipment": [
+    {
+      "equipment_id": "entrance-1",
+      "adapter": "equipment_gateway.integrations.profile:ProfileAdapter",
+      "options": {
+        "profile": {
+          "profile_id": "simulated-access-control",
+          "version": "1.0.0",
+          "device_class": "AccessController",
+          "applicability": {
+            "manufacturer": "Dataplicity simulator",
+            "models": [
+              "Fictional access controller"
+            ],
+            "revision": "1"
+          },
+          "verification": {
+            "status": "simulated",
+            "evidence": []
+          },
+          "transport": {
+            "kind": "simulated"
+          },
+          "points": [
+            {
+              "key": "door_closed",
+              "semantic_property": "door_closed",
+              "datatype": "boolean",
+              "unit": "",
+              "poll_seconds": 5,
+              "max_age_seconds": 30,
+              "access": "read"
+            }
+          ],
+          "commands": {
+            "grant_access": {
+              "input_schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "duration_seconds"
+                ],
+                "properties": {
+                  "duration_seconds": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 5
+                  }
+                }
+              },
+              "steps": [
+                {
+                  "operation": "pulse_output",
+                  "arguments": {
+                    "channel": "release-relay",
+                    "duration_seconds": {
+                      "input": "duration_seconds"
+                    }
+                  }
+                }
+              ]
+            },
+            "set_indicator": {
+              "input_schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "values"
+                ],
+                "properties": {
+                  "values": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 1,
+                    "items": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 65535
+                    }
+                  }
+                }
+              },
+              "steps": [
+                {
+                  "operation": "modbus_write",
+                  "arguments": {
+                    "register": 10,
+                    "values": {
+                      "input": "values"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "inputs": {
+          "door_closed": true
+        }
+      }
+    }
+  ],
+  "instruments": []
+}

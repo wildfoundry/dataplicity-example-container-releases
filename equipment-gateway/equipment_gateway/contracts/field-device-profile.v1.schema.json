@@ -1,0 +1,596 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Field-device profile v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "profile_id",
+    "version",
+    "device_class",
+    "applicability",
+    "transport",
+    "points",
+    "verification"
+  ],
+  "properties": {
+    "profile_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,127}$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "device_class": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+    },
+    "applicability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manufacturer",
+        "models",
+        "revision"
+      ],
+      "properties": {
+        "manufacturer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "models": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "evidence"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "simulated",
+            "unverified",
+            "bench_verified",
+            "physical_verified"
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "transport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "modbus_rtu",
+            "pulse_count",
+            "digital_input",
+            "simulated",
+            "serial"
+          ]
+        },
+        "device": {
+          "type": "string",
+          "pattern": "^/dev/"
+        },
+        "baudrate": {
+          "enum": [
+            1200,
+            2400,
+            4800,
+            9600,
+            19200,
+            38400,
+            57600,
+            115200
+          ]
+        },
+        "parity": {
+          "enum": [
+            "N",
+            "E",
+            "O"
+          ]
+        },
+        "stopbits": {
+          "enum": [
+            1,
+            2
+          ]
+        },
+        "address": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 247
+        },
+        "timeout_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 10
+        },
+        "source_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "electrical_standard": {
+          "enum": [
+            "RS232",
+            "RS485"
+          ]
+        }
+      }
+    },
+    "points": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "semantic_property",
+          "datatype",
+          "unit",
+          "poll_seconds",
+          "max_age_seconds",
+          "access"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,63}$"
+          },
+          "semantic_property": {
+            "type": "string",
+            "minLength": 1
+          },
+          "datatype": {
+            "enum": [
+              "uint16",
+              "int16",
+              "uint32",
+              "int32",
+              "float32",
+              "boolean",
+              "counter"
+            ]
+          },
+          "unit": {
+            "type": "string"
+          },
+          "poll_seconds": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 86400
+          },
+          "max_age_seconds": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 86400
+          },
+          "access": {
+            "const": "read"
+          },
+          "register": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 65535
+          },
+          "function": {
+            "enum": [
+              3,
+              4
+            ]
+          },
+          "byte_order": {
+            "enum": [
+              "big",
+              "little"
+            ]
+          },
+          "word_order": {
+            "enum": [
+              "big",
+              "little"
+            ]
+          },
+          "scale": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          },
+          "valid_range": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "number"
+            }
+          },
+          "source_key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "conversion": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "version",
+              "table"
+            ],
+            "properties": {
+              "version": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "table": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 1024,
+                "items": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "commands": {
+      "type": "object",
+      "maxProperties": 128,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "input_schema",
+          "steps"
+        ],
+        "properties": {
+          "input_schema": {
+            "type": "object"
+          },
+          "steps": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 16,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "operation",
+                "arguments"
+              ],
+              "properties": {
+                "operation": {
+                  "enum": [
+                    "read_input",
+                    "write_output",
+                    "pulse_output",
+                    "read_counter",
+                    "modbus_read",
+                    "modbus_write",
+                    "serial_transfer"
+                  ]
+                },
+                "arguments": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "io_channels": {
+      "type": "object",
+      "maxProperties": 128,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "read_input": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 65535
+          },
+          "read_counter": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 65535
+          },
+          "write_output": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 65535
+          },
+          "pulse_output": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "duration_register",
+              "trigger_coil",
+              "max_seconds",
+              "controller_timed"
+            ],
+            "properties": {
+              "duration_register": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 65535
+              },
+              "trigger_coil": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 65535
+              },
+              "max_seconds": {
+                "type": "number",
+                "minimum": 0.001,
+                "maximum": 10
+              },
+              "controller_timed": {
+                "const": true
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "device_class": {
+            "const": "EnergyMeter"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "points": {
+            "items": {
+              "properties": {
+                "semantic_property": {
+                  "enum": [
+                    "voltage",
+                    "current",
+                    "active_power",
+                    "energy",
+                    "frequency",
+                    "power_factor"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "device_class": {
+            "const": "FlowMeter"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "points": {
+            "items": {
+              "properties": {
+                "semantic_property": {
+                  "enum": [
+                    "raw_count",
+                    "flow_rate",
+                    "accumulated_volume"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "device_class": {
+            "const": "TemperatureSensor"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "points": {
+            "items": {
+              "properties": {
+                "semantic_property": {
+                  "enum": [
+                    "temperature"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "device_class": {
+            "const": "AmbientSensor"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "points": {
+            "items": {
+              "properties": {
+                "semantic_property": {
+                  "enum": [
+                    "temperature",
+                    "humidity"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "device_class": {
+            "const": "LeakSensor"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "points": {
+            "items": {
+              "properties": {
+                "semantic_property": {
+                  "enum": [
+                    "leak_detected"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "transport": {
+            "properties": {
+              "kind": {
+                "const": "modbus_rtu"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "transport": {
+            "required": [
+              "device",
+              "baudrate",
+              "parity",
+              "stopbits",
+              "address"
+            ]
+          },
+          "points": {
+            "items": {
+              "required": [
+                "register",
+                "function"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "verification": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "bench_verified",
+                  "physical_verified"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "verification": {
+            "properties": {
+              "evidence": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "transport": {
+            "properties": {
+              "kind": {
+                "const": "serial"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "transport": {
+            "required": [
+              "device",
+              "baudrate",
+              "parity",
+              "stopbits",
+              "electrical_standard",
+              "timeout_seconds"
+            ]
+          },
+          "points": {
+            "maxItems": 0
+          }
+        }
+      }
+    }
+  ]
+}

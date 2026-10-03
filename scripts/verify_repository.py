@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import re
 import subprocess
 import sys
@@ -20,6 +21,8 @@ REQUIRED_FILES = (
     "docs/PUBLISHING.md",
     "schemas/release-manifest.schema.json",
     "examples/release-manifest.example.json",
+    "equipment-gateway/pyproject.toml",
+    "equipment-gateway/Dockerfile",
 )
 FORBIDDEN_TRACKED_SUFFIXES = (
     ".tar",
@@ -35,6 +38,7 @@ SERVICES = {
     "fridge-temp-sim",
     "hvac-sim",
     "video-gen-sim",
+    "equipment-gateway",
 }
 SEMVER_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$")
 SHA_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -94,7 +98,8 @@ def validate_manifest(manifest: dict) -> None:
         fail(f"invalid semantic version: {version!r}")
     if manifest["tag"] != f"{service}/v{version}":
         fail("example manifest tag does not match service/version")
-    if manifest["source_repository"] != "wildfoundry/dataplicity-prelude":
+    source = "wildfoundry/dataplicity-example-container-releases" if service == "equipment-gateway" else "wildfoundry/dataplicity-prelude"
+    if manifest["source_repository"] != source:
         fail("example manifest source_repository is not authoritative")
     if not GIT_SHA_RE.fullmatch(str(manifest["source_commit"])):
         fail("example manifest source_commit must be a full lowercase Git SHA")
@@ -125,6 +130,11 @@ def main() -> None:
     if schema.get("$schema") != "https://json-schema.org/draft/2020-12/schema":
         fail("manifest schema must use JSON Schema draft 2020-12")
     validate_manifest(load_json("examples/release-manifest.example.json"))
+    provenance = load_json("equipment-gateway/equipment_gateway/contracts/provenance.json")
+    for name, expected in provenance["sha256"].items():
+        contract = ROOT / "equipment-gateway/equipment_gateway/contracts" / name
+        if hashlib.sha256(contract.read_bytes()).hexdigest() != expected:
+            fail(f"equipment contract snapshot hash mismatch: {name}")
 
     for relative in tracked_files():
         if relative.endswith(FORBIDDEN_TRACKED_SUFFIXES):

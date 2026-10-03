@@ -1,0 +1,37 @@
+{
+  "profile_id": "simulated-energy-scaled",
+  "version": "1.0.0",
+  "device_class": "EnergyMeter",
+  "applicability": {
+    "manufacturer": "Dataplicity simulator",
+    "models": [
+      "Fictional meter scaled"
+    ],
+    "revision": "1"
+  },
+  "verification": {
+    "status": "simulated",
+    "evidence": []
+  },
+  "transport": {
+    "kind": "simulated"
+  },
+  "points": [
+    {
+      "key": "active_power",
+      "semantic_property": "active_power",
+      "datatype": "uint16",
+      "unit": "W",
+      "poll_seconds": 5,
+      "max_age_seconds": 30,
+      "access": "read",
+      "scale": 0.1,
+      "byte_order": "big",
+      "word_order": "big",
+      "valid_range": [
+        0,
+        100000
+      ]
+    }
+  ]
+}
