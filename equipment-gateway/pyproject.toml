@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dataplicity-equipment-gateway"
-version = "0.2.0"
+version = "0.2.1"
 description = "Credential-free equipment adapters for Dataplicity Product Runtime"
 requires-python = ">=3.11"
 dependencies = ["jsonschema>=4.23,<5", "pyserial==3.5"]

@@ -10,7 +10,7 @@ on:
       version:
         description: Source package version to prepare for release
         required: true
-        default: "0.2.0"
+        default: "0.2.1"
 permissions:
   contents: read
 concurrency:
@@ -64,7 +64,7 @@ jobs:
           path: native-assets
       - name: Assemble and verify multi-platform release
         env:
-          REQUESTED_VERSION: ${{ inputs.version || '0.2.0' }}
+          REQUESTED_VERSION: ${{ inputs.version || '0.2.1' }}
         run: |
           python3 -c 'import os,tomllib; assert os.environ["REQUESTED_VERSION"] == tomllib.load(open("equipment-gateway/pyproject.toml","rb"))["project"]["version"]'
           mkdir -p release-assets

@@ -19,25 +19,30 @@ from .profiles import observe, validate_bus_assignments
 from .physical import PrimitiveError
 
 LOG = logging.getLogger("equipment-gateway")
+INVENTORY_INTERVAL_SECONDS = 30
+MAX_INVENTORY_BYTES = 49152
+COMMAND_BATCH_SIZE = 8
 
 
 def load_config(path):
     config = json.loads(Path(path).read_text())
-    if config.get("schema_version") != 2 or not isinstance(config.get("product_instance_id"), str) or not config["product_instance_id"]:
+    if config.get("schema_version") != 2 or not isinstance(config.get("product_instance_id"), str) or not 0 < len(config["product_instance_id"]) <= 64:
         raise ValueError("Gateway config requires schema_version=2 and product_instance_id")
     equipment = config.get("equipment", [])
     if not isinstance(equipment, list) or len(equipment) > 128:
         raise ValueError("Gateway supports up to 128 equipment endpoints")
     identifiers = [entry["equipment_id"] for entry in equipment]
-    if len(set(identifiers)) != len(identifiers) or any(not isinstance(i, str) or not i for i in identifiers):
+    if len(set(identifiers)) != len(identifiers) or any(not isinstance(i, str) or not 0 < len(i) <= 128 for i in identifiers):
         raise ValueError("Equipment IDs must be unique nonempty strings")
     for entry in equipment:
-        load_adapter(entry)
+        adapter = load_adapter(entry)
+        if len(json.dumps(adapter.capabilities, allow_nan=False).encode()) > 32768:
+            raise ValueError("Equipment capability declaration exceeds its byte budget")
     instruments = config.get("instruments", [])
     if not isinstance(instruments, list) or len(instruments) > 128:
         raise ValueError("Gateway supports up to 128 instruments")
     instrument_ids = [i["instrument_id"] for i in instruments]
-    if len(set(instrument_ids)) != len(instrument_ids) or any(not isinstance(i, str) or not i for i in instrument_ids):
+    if len(set(instrument_ids)) != len(instrument_ids) or any(not isinstance(i, str) or not 0 < len(i) <= 128 for i in instrument_ids):
         raise ValueError("Instrument IDs must be unique nonempty strings")
     validate_bus_assignments([i["profile"] for i in instruments] + [entry["options"]["profile"] for entry in equipment if "profile" in entry.get("options", {})])
     for instrument in instruments:
@@ -54,7 +59,7 @@ class Gateway:
         self.readers = {}
         self.adapters = {entry["equipment_id"]: load_adapter(entry, self.readers) for entry in config.get("equipment", [])}
         self.next_poll = {}
-        self.inventory_sent = False
+        self.next_inventory = 0
         self.profile_points = [(instrument, point) for instrument in config.get("instruments", [])
                                for point in instrument["profile"]["points"]]
         self.poll_cursor = 0
@@ -146,19 +151,43 @@ class Gateway:
             self.agent.event("equipment.observation", value, instance_id=self.instance_id, durability="durable_batched")
             self.next_poll[key] = observed_at + point["poll_seconds"]
 
+    def publish_inventory(self):
+        # Inventory is a current capability declaration, not a sensor reading.
+        # Bound both bytes and item counts for agent/cloud record projections.
+        payload = {"version": __version__, "equipment": {}, "profiles": []}
+        entries = [("equipment", key, adapter.capabilities) for key, adapter in self.adapters.items()]
+        entries += [("profiles", None, {"instrument_id": i["instrument_id"],
+                     "profile_id": i["profile"]["profile_id"], "version": i["profile"]["version"]})
+                    for i in self.config.get("instruments", [])]
+        for section, key, value in entries:
+            candidate = {"version": __version__, "equipment": dict(payload["equipment"]),
+                         "profiles": list(payload["profiles"])}
+            if section == "equipment": candidate[section][key] = value
+            else: candidate[section].append(value)
+            if len(json.dumps(candidate, allow_nan=False).encode()) > MAX_INVENTORY_BYTES or len(candidate[section]) > 100:
+                self.agent.event("equipment.gateway_inventory", payload, instance_id=self.instance_id)
+                candidate = {"version": __version__, "equipment": {}, "profiles": []}
+                if section == "equipment": candidate[section][key] = value
+                else: candidate[section].append(value)
+                if len(json.dumps(candidate, allow_nan=False).encode()) > MAX_INVENTORY_BYTES:
+                    raise ValueError("Inventory item exceeds its byte budget")
+            payload = candidate
+        self.agent.event("equipment.gateway_inventory", payload, instance_id=self.instance_id)
+
     def tick(self):
-        if not self.inventory_sent:
-            self.agent.event("equipment.gateway_inventory", {"version": __version__,
-                             "equipment": {key: value.capabilities for key, value in self.adapters.items()},
-                             "profiles": [{"instrument_id": i["instrument_id"], "profile_id": i["profile"]["profile_id"],
-                                           "version": i["profile"]["version"]} for i in self.config.get("instruments", [])]},
-                             instance_id=self.instance_id)
-            self.inventory_sent = True
+        if time.monotonic() >= self.next_inventory:
+            self.publish_inventory()
+            self.next_inventory = time.monotonic() + INVENTORY_INTERVAL_SECONDS
         # Replay application outcomes, never physical commands, after a restart.
         for row in self.journal.unreported():
             self.report(row)
-        pending = self.agent.call("GetPendingCommands", limit=100)["commands"]
+        pending = self.agent.call("GetPendingCommands", limit=COMMAND_BATCH_SIZE)["commands"]
+        command_deadline = time.monotonic() + 2
         for command in pending:
+            # An effect already underway must finish and be journalled; stop
+            # starting additional effects once this tick's budget expires.
+            if time.monotonic() >= command_deadline:
+                break
             self.handle(command)
         now = time.time()
         equipment = list(self.adapters.items())
