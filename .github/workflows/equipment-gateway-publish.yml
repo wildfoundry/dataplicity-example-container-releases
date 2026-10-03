@@ -1,0 +1,58 @@
+name: Publish qualified equipment gateway
+on:
+  workflow_run:
+    workflows: ["Equipment gateway OCI build"]
+    types: [completed]
+permissions:
+  contents: read
+concurrency:
+  group: equipment-gateway-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.event != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: equipment-gateway-release-assets
+          path: release-assets
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - name: Verify source and release bundle
+        env:
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          python3 -c 'import json,os; m=json.load(open("release-assets/release-manifest.json")); assert m["source_commit"] == os.environ["SOURCE_SHA"]; assert m["source_repository"] == os.environ["GITHUB_REPOSITORY"]'
+          tag=$(python3 -c 'import json; print(json.load(open("release-assets/release-manifest.json"))["tag"])')
+          python3 scripts/verify_release.py release-assets --tag "$tag"
+      - uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: release-assets/*_oci.tar
+      - name: Publish immutable qualification prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          tag=$(python3 -c 'import json; print(json.load(open("release-assets/release-manifest.json"))["tag"])')
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release download "$tag" --dir existing-release
+            python3 scripts/verify_release.py existing-release --tag "$tag"
+            cmp release-assets/release-manifest.json existing-release/release-manifest.json
+          else
+            gh release create "$tag" release-assets/* --target "$SOURCE_SHA" --title "$tag" --prerelease --notes "Reusable equipment gateway qualification build. Includes AMD64/ARM64 OCI archive, source/digest manifest and checksums. Simulated reference profiles are explicitly labelled; no OEM or physical commissioning qualification is implied."
+          fi
+          gh release download "$tag" --dir published-release
+          python3 scripts/verify_release.py published-release --tag "$tag"
+          gh attestation verify published-release/*_oci.tar --repo "$GITHUB_REPOSITORY"
