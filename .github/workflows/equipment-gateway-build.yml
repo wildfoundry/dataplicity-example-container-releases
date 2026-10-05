@@ -52,7 +52,7 @@ jobs:
             -v "$PWD/equipment-gateway/profiles:/etc/equipment-gateway/profiles:ro" \
             equipment-gateway-qualification:local \
             --config /etc/equipment-gateway/config.json --check
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: equipment-gateway-linux-${{ matrix.architecture }}
           path: native-assets/
@@ -80,7 +80,7 @@ jobs:
           python3 scripts/combine_equipment_oci.py native-assets "release-assets/equipment-gateway_${REQUESTED_VERSION}_oci.tar" --metadata build-metadata.json
           python3 scripts/build_equipment_manifest.py release-assets --version "$REQUESTED_VERSION" --metadata build-metadata.json
           python3 scripts/verify_release.py release-assets --tag "equipment-gateway/v${REQUESTED_VERSION}"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: equipment-gateway-release-assets
           path: release-assets/
