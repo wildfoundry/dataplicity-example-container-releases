@@ -87,6 +87,50 @@ def write_frame(address, register, values):
     return body + struct.pack("<H", crc16(body))
 
 
+def waveshare_flash_units(duration_seconds, *, time_quantum_seconds=0.1):
+    """Convert a pulse duration to Waveshare flash delay units (quantum × N)."""
+    if isinstance(duration_seconds, bool) or not isinstance(duration_seconds, (int, float)):
+        raise ValueError("Flash duration must be a positive number of seconds")
+    if isinstance(time_quantum_seconds, bool) or not isinstance(time_quantum_seconds, (int, float)):
+        raise ValueError("Flash time quantum must be a positive number of seconds")
+    duration = float(duration_seconds)
+    quantum = float(time_quantum_seconds)
+    if not 0 < quantum <= 1:
+        raise ValueError("Flash time quantum must be greater than zero and at most one second")
+    if not 0 < duration <= 0x7FFF * quantum:
+        raise ValueError("Flash duration exceeds Waveshare controller timer bounds")
+    units = int(round(duration / quantum))
+    if units < 1 or abs(units * quantum - duration) > 1e-9:
+        raise ValueError(
+            f"Flash duration {duration}s must be an exact multiple of the "
+            f"{quantum}s Waveshare time quantum (got {units} units)"
+        )
+    return units
+
+
+def waveshare_flash_frame(address, relay, duration_seconds, *, flash="on", time_quantum_seconds=0.1):
+    """Build a Waveshare Modbus RTU Relay flash-on/off frame (FC05 subcommand).
+
+    Wire format (see Waveshare Modbus RTU Relay protocol manual)::
+
+        AA 05 MM RR HH LL CCCC
+
+    where ``MM`` is ``0x02`` (flash on) or ``0x04`` (flash off), ``RR`` is the
+    relay index, and ``HHLL`` is delay units of ``time_quantum_seconds``
+    (default 100 ms). The controller owns the timer; the host does not sleep.
+    """
+    if type(address) is not int or not 1 <= address <= 247:
+        raise ValueError("Invalid Modbus device address")
+    if type(relay) is not int or not 0 <= relay <= 31:
+        raise ValueError("Waveshare relay index must be 0-31")
+    if flash not in {"on", "off"}:
+        raise ValueError("Waveshare flash mode must be 'on' or 'off'")
+    units = waveshare_flash_units(duration_seconds, time_quantum_seconds=time_quantum_seconds)
+    mode = 0x02 if flash == "on" else 0x04
+    body = struct.pack(">BBBBH", address, 5, mode, relay, units)
+    return body + struct.pack("<H", crc16(body))
+
+
 def parse_write_response(data, *, request):
     if len(data) < 5 or crc16(data[:-2]) != int.from_bytes(data[-2:], "little"):
         raise TransportError("crc_error", "Invalid Modbus write acknowledgement")
@@ -117,6 +161,18 @@ class ModbusTransport(ModbusReader):
             raise ValueError("Invalid Modbus coil output")
         body = struct.pack(">BBHH", address or self.transport["address"], 5, register, 0xFF00 if value else 0)
         self._write_request(body + struct.pack("<H", crc16(body)))
+
+    def flash_output(self, relay, duration_seconds, *, flash="on", address=None, time_quantum_seconds=0.1):
+        """Waveshare Modbus RTU Relay controller-timed flash (FC05 subcommand)."""
+        self._write_request(
+            waveshare_flash_frame(
+                address or self.transport["address"],
+                relay,
+                duration_seconds,
+                flash=flash,
+                time_quantum_seconds=time_quantum_seconds,
+            )
+        )
 
     def read_input(self, register, *, function=2, address=None):
         address = address or self.transport["address"]

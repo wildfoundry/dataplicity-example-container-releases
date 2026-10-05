@@ -1,0 +1,25 @@
+{
+  "machine_profile": "Maytag CompuTrac - Enable Pulse",
+  "manufacturer": "Maytag",
+  "model": "CompuTrac Enable",
+  "activation": "enable_pulse",
+  "default_duration_seconds": 0.03,
+  "default_gap_seconds": 0.1,
+  "default_pulses_per_vend": 1,
+  "default_active_high": true,
+  "channel": "credit-pulse",
+  "status": "field_candidate",
+  "brands": ["Maytag"],
+  "aliases": ["maytag-enable", "maytag-computrac"],
+  "notes": "Older CompuTrac boards expose Enable1/Enable2. Public PD troubleshooting guide: ~5 V, 30 ms pulse on Enable1 relative to Enable2 ground. Gen1 pulse dryers (MLG3xPD/MLG4xPD) similarly expect one enable pulse; polarity/wire colour is site-critical.",
+  "sources": [
+    {
+      "title": "Maytag PD troubleshooting (Enable 5 V / 30 ms)",
+      "url": "https://maytag.manymanuals.com/washing-machines/pd/troubleshooting-guide-13403"
+    },
+    {
+      "title": "Laundroworks Maytag Gen1 pulse dryers (ENABLE1/ENABLE2)",
+      "url": "https://support.laundroworks.com/portal/en/kb/articles/maytag-gen1-pulse-dryers"
+    }
+  ]
+}

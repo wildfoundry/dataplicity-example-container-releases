@@ -1,0 +1,21 @@
+{
+  "machine_profile": "Dexter C-Series - Pulse",
+  "manufacturer": "Dexter",
+  "model": "C-Series Pulse",
+  "activation": "credit_pulse",
+  "default_duration_seconds": 0.055,
+  "default_gap_seconds": 0.3,
+  "default_pulses_per_vend": 1,
+  "default_active_high": true,
+  "channel": "credit-pulse",
+  "status": "field_candidate",
+  "brands": ["Dexter"],
+  "aliases": ["dexter-c-pulse"],
+  "notes": "Airwallet WISER documents Dexter C-Series washer pulse length 55 ms (busy signal high-in-use). Gap not published there; 300 ms retained from Dexter X installer practice until scoped on hardware.",
+  "sources": [
+    {
+      "title": "Airwallet Dexter C-Series washer pulse length 55 ms",
+      "url": "https://wiser.airwallet.net/en/article/dexter-c-series-washer-10e2rov/"
+    }
+  ]
+}

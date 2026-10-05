@@ -1,0 +1,25 @@
+{
+  "machine_profile": "Electrolux Compass Pro Dryer - Pulse",
+  "manufacturer": "Electrolux",
+  "model": "Compass Pro Dryer Pulse",
+  "activation": "credit_pulse",
+  "default_duration_seconds": 0.05,
+  "default_gap_seconds": 0.3,
+  "default_pulses_per_vend": 1,
+  "default_active_high": true,
+  "channel": "credit-pulse",
+  "status": "field_candidate",
+  "brands": ["Electrolux", "Wascomat"],
+  "aliases": ["electrolux-dryer-pulse", "wascomat-dryer-pulse"],
+  "notes": "Compass Pro dryers are documented by payment installers as pulse/relay (coin1/coin2) with machine-side coin value / time-per-coin settings. Exact ms not published in those articles; 50/300 ms mirrors PayRange universal Method 1 until scoped. Compass/Clarus washers are serial — do not use this profile for washers.",
+  "sources": [
+    {
+      "title": "Laundroworks Electrolux Compass Pro dryers (pulse)",
+      "url": "https://support.laundroworks.com/portal/en/kb/articles/electrolux-compass-pro-dryers"
+    },
+    {
+      "title": "PayRange universal Method 1 default 50 ms / 300 ms",
+      "url": "https://payrange.com/for_download/manuals/PayRange-Laundry-Resources/Laundry-Installation-Guides/Laundrylux/BkPro-RelayModule-HV_LV-PN-11.02043-xx.pdf"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "machine_profile": "Maytag - CommonPulse",
+  "manufacturer": "Maytag",
+  "model": "CommonPulse",
+  "activation": "credit_pulse",
+  "default_duration_seconds": 0.03,
+  "default_gap_seconds": 0.1,
+  "default_pulses_per_vend": 1,
+  "default_active_high": true,
+  "channel": "credit-pulse",
+  "status": "field_candidate",
+  "brands": ["Maytag"],
+  "aliases": ["maytag-pulse", "maytag-commonpulse"],
+  "notes": "Kiosoft CommonPulse wiring to Coin1: pulse width 30 ms, pulse rate 100 ms, pulse type High. Configure machine so one pulse satisfies vend when using single-vend readers.",
+  "sources": [
+    {
+      "title": "Kiosoft Maytag CommonPulse wiring (30 ms / 100 ms)",
+      "url": "https://support.kiosoft.com/docs/wiring-maytag-commonpulse-single-dual-pocket-revised-11-07-2022"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "equipment_id": "washer-1",
+  "bay": "A1",
+  "label": "Speed Queen front load",
+  "adapter": "equipment_gateway.integrations.laundry:PulseActivated",
+  "options": {
+    "machine_profile": "Speed Queen - Pulse Activated",
+    "credit_pulse": {
+      "backend": "gpio",
+      "chip": "/dev/gpiochip0",
+      "line": 17,
+      "timing": "hybrid",
+      "consumer": "rinsepilot-washer-1"
+    }
+  }
+}

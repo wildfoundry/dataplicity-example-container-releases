@@ -1,0 +1,25 @@
+{
+  "machine_profile": "Girbau Profit Plus - Pulse",
+  "manufacturer": "Girbau",
+  "model": "Profit Plus Pulse",
+  "activation": "credit_pulse",
+  "default_duration_seconds": 0.025,
+  "default_gap_seconds": 0.025,
+  "default_pulses_per_vend": 1,
+  "default_active_high": true,
+  "channel": "credit-pulse",
+  "status": "field_candidate",
+  "brands": ["Girbau", "Continental Girbau"],
+  "aliases": ["girbau-pulse", "continental-girbau-pulse"],
+  "notes": "Kiosoft Girbau / Continental Girbau Profit Plus pulse kit: Coin Pulse, idle open, 25 ms duration, 25 ms gap. Machine board must be in coin mode (serial Id disabled as applicable).",
+  "sources": [
+    {
+      "title": "Kiosoft Girbau pulse profile (25 ms / 25 ms)",
+      "url": "https://support.kiosoft.com/docs/how-to-create-a-pulse-profile-girbau"
+    },
+    {
+      "title": "Kiosoft Continental Girbau Profit Plus pulse wiring",
+      "url": "https://support.kiosoft.com/docs/how-to-wire-a-continental-girbau-profit-plus-with-a-kiosoft-reader-pulse"
+    }
+  ]
+}

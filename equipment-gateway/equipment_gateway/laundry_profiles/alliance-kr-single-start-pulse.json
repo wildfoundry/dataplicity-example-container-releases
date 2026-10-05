@@ -1,0 +1,21 @@
+{
+  "machine_profile": "Alliance KR - Single Start Pulse",
+  "manufacturer": "Alliance Laundry Systems",
+  "model": "KR Single Start Pulse",
+  "activation": "start_pulse",
+  "default_duration_seconds": 1.0,
+  "default_gap_seconds": 0.1,
+  "default_pulses_per_vend": 1,
+  "default_active_high": true,
+  "channel": "credit-pulse",
+  "status": "field_candidate",
+  "brands": ["Speed Queen", "Huebsch", "Alliance Laundry Systems"],
+  "aliases": ["alliance-kr-single", "SQ-KR-single"],
+  "notes": "PayRange documents Alliance KR units that accumulate coin pulses then emit one start pulse; reader Pulse On must be 1000 ms and only a single pulse. Distinct from the 100 ms K11/K12 coin-emulation path.",
+  "sources": [
+    {
+      "title": "PayRange BluKey Alliance KR single start pulse = 1000 ms",
+      "url": "https://payrange.com/for_download/manuals/PayRange-Laundry-Resources/Laundry-Installation-Guides/Laundrylux/BkPro-RelayModule-HV_LV-PN-11.02043-xx.pdf"
+    }
+  ]
+}

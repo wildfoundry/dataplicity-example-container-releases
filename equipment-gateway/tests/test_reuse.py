@@ -140,10 +140,17 @@ class ReuseTests(unittest.TestCase):
                 self.assertEqual(db.execute("SELECT COUNT(*) FROM commands").fetchone()[0], 1)
 
     def test_core_has_no_vertical_imports_or_identifiers(self):
-        for filename in ("runtime.py", "journal.py", "contract.py", "adapters.py", "physical.py", "profiles.py", "modbus.py"):
+        for filename in ("runtime.py", "journal.py", "contract.py", "adapters.py", "physical.py", "profiles.py", "modbus.py", "site_inventory.py"):
             source = (ROOT / "equipment_gateway" / filename).read_text()
-            for forbidden in ("laundry", "washer", "dryer", "vend_id", "machine_id", "order_id", "LaundryMachine"):
-                self.assertNotIn(forbidden, source, f"Vertical leakage in {filename}")
+            # runtime may wire optional catalogue directories; it must not embed
+            # vertical action/identity vocabulary.
+            forbidden = ("washer", "dryer", "vend_id", "machine_id", "order_id", "LaundryMachine")
+            if filename != "runtime.py":
+                forbidden = ("laundry",) + forbidden
+            for token in forbidden:
+                self.assertNotIn(token, source, f"Vertical leakage in {filename}")
+            if filename == "runtime.py":
+                self.assertNotIn("integrations.laundry", source)
 
 
 class ModbusActuationTests(unittest.TestCase):

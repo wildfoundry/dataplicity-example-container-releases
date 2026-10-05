@@ -1,0 +1,33 @@
+{
+  "machine_profile": "Universal - Coin Pulse Emulation",
+  "manufacturer": "Generic",
+  "model": "Coin Pulse Emulation",
+  "activation": "credit_pulse",
+  "default_duration_seconds": 0.05,
+  "default_gap_seconds": 0.3,
+  "default_pulses_per_vend": 1,
+  "default_active_high": true,
+  "channel": "credit-pulse",
+  "status": "field_candidate",
+  "brands": [
+    "Speed Queen",
+    "Huebsch",
+    "IPSO",
+    "UniMac",
+    "Dexter",
+    "ADC",
+    "Maytag"
+  ],
+  "aliases": ["universal-pulse", "coin-pulse-emulation"],
+  "notes": "PayRange Method 1 'most common' harness covering Speed Queen, Huebsch, Ipso, Unimac, Dexter, ADC, Maytag (ADC-built). Default Pulse On 50 ms / Pulse Off 300 ms. Prefer a brand-specific profile when one exists; use this for unknown coin-drop emulation targets while scoping.",
+  "sources": [
+    {
+      "title": "PayRange BluKey Method 1 universal pulse table",
+      "url": "https://payrange.com/for_download/manuals/PayRange-Laundry-Resources/Laundry-Installation-Guides/Laundrylux/BkPro-RelayModule-HV_LV-PN-11.02043-xx.pdf"
+    },
+    {
+      "title": "FasCard: measure coin-drop pulse length on site",
+      "url": "https://cardconceptsinc.atlassian.net/wiki/spaces/LCE/pages/9240851"
+    }
+  ]
+}
