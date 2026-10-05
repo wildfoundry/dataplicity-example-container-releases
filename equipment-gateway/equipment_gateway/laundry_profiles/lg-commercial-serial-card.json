@@ -1,0 +1,25 @@
+{
+  "machine_profile": "LG Commercial - Serial Card",
+  "manufacturer": "LG",
+  "model": "Serial Card Mode",
+  "activation": "serial_native",
+  "default_duration_seconds": 0.06,
+  "default_gap_seconds": 0.15,
+  "default_pulses_per_vend": 1,
+  "default_active_high": true,
+  "channel": "serial-card",
+  "status": "catalogue_only",
+  "brands": ["LG"],
+  "aliases": ["lg-serial", "lg-card-mode"],
+  "notes": "LG commercial units expose a separate serial card-reader connector (Tx/Rx). FasCard warns not to leave the machine in card mode when using pulse kits. Catalogue-only until a serial adapter exists; use LG Commercial - Pulse Activated for coin-pulse GPIO work.",
+  "sources": [
+    {
+      "title": "FasCard LG Giant-C card vs pulse mode",
+      "url": "https://cardconceptsinc.atlassian.net/wiki/spaces/LCE/pages/9240741"
+    },
+    {
+      "title": "LG commercial coin vs card connector overview",
+      "url": "https://www.lg.com/ph/business/commercial-laundry/tools-and-resources/"
+    }
+  ]
+}

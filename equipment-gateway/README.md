@@ -15,10 +15,40 @@ an explicit plugin and its options. No plugin is downloaded at runtime.
 
 `config.example.json` selects the LaundryMachine simulator adapter.
 `config.access-control.example.json` selects a declarative AccessController
-profile. Both use the **same executable/container**, runtime, primitive engine,
+profile. `config.site.example.json` + `equipment.example/*.json` show how to
+scale to many laundry endpoints: one JSON file per machine, each naming a
+catalogue `machine_profile`. Bundled families cover common commercial brands
+(Alliance/Speed Queen/Huebsch/UniMac/IPSO, Dexter, Maytag, ADC, LG, Girbau,
+Primus/MXR, Electrolux dryer pulse, plus serial-native catalogue markers).
+Timings cite public OEM/payment-installer docs — see
+`laundry_profiles/CATALOGUE.md`. Extend on-device via `machine_profiles_dir`
+or `LAUNDRY_PROFILES_DIR` without rebuilding the image.
+
+All examples use the **same executable/container**, runtime, primitive engine,
 agent connection and journal. The access example exercises a controller-timed
 relay pulse, digital observation and register operations without core changes.
-Neither example claims physical hardware compatibility.
+The Speed Queen GPIO example is a bench/lab path for oscilloscope verification;
+it is not an OEM wiring claim and is not a fail-safe remote I/O timer. GPIO
+credit pulses default to hybrid wait (sleep + short busy-wait tail) on the CM5
+header. When the site runs Waveshare Modbus RTU Relay / IO boards, set
+`credit_pulse.backend` to `modbus_waveshare_flash` so the **controller** owns
+the pulse timer (Waveshare FC05 flash-on, 100 ms quantum) — see
+`config.waveshare-modbus.example.json`. Sub-100 ms machine profiles need an
+explicit `duration_seconds` override that is a multiple of 0.1 s (only when the
+OEM accepts the longer pulse).
+
+```sh
+# Track configured families and site machines
+equipment-gateway --list-machine-profiles
+equipment-gateway --config config.site.example.json --list-equipment
+equipment-gateway --config config.site.example.json --check
+```
+
+To add another washer/dryer on a controller: drop
+`/etc/equipment-gateway/equipment/<id>.json` (see `equipment.example/`), point
+`equipment_dir` at that folder, and re-run `--check`. To add another actuation
+family: copy `laundry_profiles/speed-queen-pulse-activated.json`, set a unique
+`machine_profile`, then `--list-machine-profiles`.
 
 ## Commands and persistence
 
@@ -98,6 +128,18 @@ python3 -m venv .venv
 .venv/bin/python -m unittest discover -s tests -v
 .venv/bin/equipment-gateway --config config.example.json --check
 .venv/bin/equipment-gateway --config config.access-control.example.json --check
+.venv/bin/equipment-gateway --config config.site.example.json --check
+.venv/bin/equipment-gateway --config config.waveshare-modbus.example.json --check
+.venv/bin/equipment-gateway --list-machine-profiles
+```
+
+Waveshare Modbus RTU Relay (controller-timed flash) is managed Softwares:
+OCI `site_templates/` materialize into `/var/lib/equipment-gateway` on start
+(dpdata). No device-side sudo. See [docs/WAVESHARE_MODBUS.md](docs/WAVESHARE_MODBUS.md).
+
+```sh
+# After Softwares ≥0.2.4 is on the device and the USB-RS485 adapter is present:
+equipment-gateway --probe
 ```
 
 Set `PYTHONPATH` to a reviewed Prelude checkout to run the real agent Unix-socket

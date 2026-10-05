@@ -1,0 +1,25 @@
+{
+  "machine_profile": "LG Commercial - Pulse Activated",
+  "manufacturer": "LG",
+  "model": "Commercial Pulse",
+  "activation": "credit_pulse",
+  "default_duration_seconds": 0.06,
+  "default_gap_seconds": 0.15,
+  "default_pulses_per_vend": 1,
+  "default_active_high": true,
+  "channel": "credit-pulse",
+  "status": "field_candidate",
+  "brands": ["LG"],
+  "aliases": ["lg-pulse", "lg-commercial-pulse"],
+  "notes": "Kiosoft LG pulse kit PK170009: RelayPulse, idle open, 60 ms duration, 150 ms gap. Machine must remain in coin mode for pulse; card/serial mode is a different path (see LG Commercial - Serial Card).",
+  "sources": [
+    {
+      "title": "Kiosoft LG universal pulse profile (60 ms / 150 ms)",
+      "url": "https://support.kiosoft.com/docs/how-to-create-a-universal-pulse-profile-for-an-lg-machine-using-the-lg-pulse-kit-pk170009"
+    },
+    {
+      "title": "FasCard LG Giant-C: do not use card mode for pulse",
+      "url": "https://cardconceptsinc.atlassian.net/wiki/spaces/LCE/pages/9240741"
+    }
+  ]
+}

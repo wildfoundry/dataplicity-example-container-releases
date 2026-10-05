@@ -1,0 +1,14 @@
+{
+  "equipment_id": "washer-5",
+  "bay": "A5",
+  "label": "Girbau Profit Plus",
+  "adapter": "equipment_gateway.integrations.laundry:PulseActivated",
+  "options": {
+    "machine_profile": "Girbau Profit Plus - Pulse",
+    "credit_pulse": {
+      "chip": "/dev/gpiochip0",
+      "line": 5,
+      "consumer": "rinsepilot-washer-5"
+    }
+  }
+}

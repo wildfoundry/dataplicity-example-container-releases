@@ -1,0 +1,15 @@
+{
+  "equipment_id": "washer-6",
+  "bay": "A6",
+  "label": "Primus / MXR pulse-low",
+  "adapter": "equipment_gateway.integrations.laundry:PulseActivated",
+  "options": {
+    "machine_profile": "Primus MXR - Pulse",
+    "credit_pulse": {
+      "chip": "/dev/gpiochip0",
+      "line": 6,
+      "active_high": false,
+      "consumer": "rinsepilot-washer-6"
+    }
+  }
+}

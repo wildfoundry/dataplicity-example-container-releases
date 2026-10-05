@@ -1,0 +1,25 @@
+{
+  "machine_profile": "Dexter - Pulse Activated",
+  "manufacturer": "Dexter",
+  "model": "Pulse Activated",
+  "activation": "credit_pulse",
+  "default_duration_seconds": 0.05,
+  "default_gap_seconds": 0.3,
+  "default_pulses_per_vend": 1,
+  "default_active_high": true,
+  "channel": "credit-pulse",
+  "status": "field_candidate",
+  "brands": ["Dexter"],
+  "aliases": ["dexter-pulse", "dexter-x-pulse"],
+  "notes": "Coin-drop emulation on A/C/X series and older pulse dryers. Public installer docs: reader sends one pulse; set machine coin value = full vend (or vend = one coin). Kiosoft Dexter X pulse profile: 50 ms duration, 300 ms gap, idle-open.",
+  "sources": [
+    {
+      "title": "Laundroworks Dexter A-series washers (one pulse start)",
+      "url": "https://support.laundroworks.com/portal/en/kb/articles/dexter-a-series-washers-new"
+    },
+    {
+      "title": "Kiosoft Dexter X-series pulse: 50 ms / 300 ms",
+      "url": "https://support.kiosoft.com/docs/clone-feature-deployment-instructions-supporting-dexter-x-series"
+    }
+  ]
+}

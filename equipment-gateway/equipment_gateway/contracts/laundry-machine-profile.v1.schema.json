@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "laundry-machine-profile.v1",
+  "title": "Laundry machine family profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "machine_profile",
+    "manufacturer",
+    "model",
+    "activation",
+    "default_duration_seconds",
+    "default_pulses_per_vend",
+    "channel",
+    "status"
+  ],
+  "properties": {
+    "machine_profile": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Stable display name used in container equipment options.machine_profile."
+    },
+    "manufacturer": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "model": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "activation": {
+      "type": "string",
+      "enum": ["start_pulse", "credit_pulse", "enable_pulse", "serial_native"],
+      "description": "start/credit/enable_pulse are GPIO-hostable. serial_native is catalogue-only until a serial adapter exists."
+    },
+    "default_duration_seconds": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 2
+    },
+    "default_gap_seconds": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 2,
+      "description": "Idle time between successive pulses when pulses_per_vend > 1."
+    },
+    "default_pulses_per_vend": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20
+    },
+    "default_active_high": {
+      "type": "boolean",
+      "description": "Logical active level for the credit/start line. Idle-open relay paths are typically active_high=true."
+    },
+    "channel": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "status": {
+      "type": "string",
+      "enum": ["lab_bench", "field_candidate", "catalogue_only", "qualified"],
+      "description": "lab_bench=desk GPIO; field_candidate=payment-vendor published timing; catalogue_only=documented but not host-pulseable; qualified=OEM evidence."
+    },
+    "brands": {
+      "type": "array",
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64
+      }
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 2048
+    },
+    "aliases": {
+      "type": "array",
+      "maxItems": 16,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      }
+    },
+    "sources": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "url"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "url": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 512
+          }
+        }
+      }
+    }
+  }
+}

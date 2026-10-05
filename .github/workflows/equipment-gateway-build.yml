@@ -47,7 +47,11 @@ jobs:
           docker buildx create --use --driver docker-container
           docker buildx build equipment-gateway --platform "linux/$ARCHITECTURE" --provenance=false --sbom=false --output "type=oci,dest=native-assets/$ARCHITECTURE.tar"
           docker buildx build equipment-gateway --platform "linux/$ARCHITECTURE" --load --tag equipment-gateway-qualification:local
-          docker run --rm -v "$PWD/equipment-gateway/config.access-control.example.json:/etc/equipment-gateway/config.json:ro" -v "$PWD/equipment-gateway/profiles:/etc/equipment-gateway/profiles:ro" equipment-gateway-qualification:local --check
+          docker run --rm \
+            -v "$PWD/equipment-gateway/config.access-control.example.json:/etc/equipment-gateway/config.json:ro" \
+            -v "$PWD/equipment-gateway/profiles:/etc/equipment-gateway/profiles:ro" \
+            equipment-gateway-qualification:local \
+            --config /etc/equipment-gateway/config.json --check
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: equipment-gateway-linux-${{ matrix.architecture }}
@@ -64,8 +68,13 @@ jobs:
           path: native-assets
       - name: Assemble and verify multi-platform release
         env:
-          REQUESTED_VERSION: ${{ inputs.version || '0.2.1' }}
+          REQUESTED_VERSION: ${{ inputs.version }}
         run: |
+          # Prefer explicit workflow_dispatch version; otherwise use pyproject (push to main).
+          if [ -z "${REQUESTED_VERSION}" ]; then
+            REQUESTED_VERSION="$(python3 -c 'import tomllib; print(tomllib.load(open("equipment-gateway/pyproject.toml","rb"))["project"]["version"])')"
+          fi
+          export REQUESTED_VERSION
           python3 -c 'import os,tomllib; assert os.environ["REQUESTED_VERSION"] == tomllib.load(open("equipment-gateway/pyproject.toml","rb"))["project"]["version"]'
           mkdir -p release-assets
           python3 scripts/combine_equipment_oci.py native-assets "release-assets/equipment-gateway_${REQUESTED_VERSION}_oci.tar" --metadata build-metadata.json

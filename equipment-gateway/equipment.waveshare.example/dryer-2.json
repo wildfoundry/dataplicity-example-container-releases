@@ -1,0 +1,27 @@
+{
+  "equipment_id": "dryer-2",
+  "bay": "B2",
+  "label": "Speed Queen dryer",
+  "adapter": "equipment_gateway.integrations.laundry:PulseActivated",
+  "options": {
+    "machine_profile": "Speed Queen - Pulse Activated",
+    "duration_seconds": 0.1,
+    "credit_pulse": {
+      "backend": "modbus_waveshare_flash",
+      "transport": {
+        "kind": "modbus_rtu",
+        "device": "/dev/ttyUSB0",
+        "address": 1,
+        "baudrate": 9600,
+        "parity": "N",
+        "stopbits": 1,
+        "timeout_seconds": 1
+      },
+      "relay": 5,
+      "flash": "on",
+      "time_quantum_seconds": 0.1,
+      "max_seconds": 2.0,
+      "consumer": "rinsepilot-dryer-2"
+    }
+  }
+}

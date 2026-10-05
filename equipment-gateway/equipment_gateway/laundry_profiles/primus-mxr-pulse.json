@@ -1,0 +1,21 @@
+{
+  "machine_profile": "Primus MXR - Pulse",
+  "manufacturer": "Primus",
+  "model": "MXR Pulse",
+  "activation": "credit_pulse",
+  "default_duration_seconds": 0.08,
+  "default_gap_seconds": 0.2,
+  "default_pulses_per_vend": 1,
+  "default_active_high": false,
+  "channel": "credit-pulse",
+  "status": "field_candidate",
+  "brands": ["Primus", "Maytag Commercial"],
+  "aliases": ["primus-pulse", "mxr-pulse", "maytag-mxr-pulse"],
+  "notes": "Kiosoft Primus washer kit (also used on Maytag MXR30PD docs): Coin Pulse, 80 ms width, 200 ms rate, Pulse Low. default_active_high=false matches active-low / pulse-low installer setting; confirm with a scope before field use.",
+  "sources": [
+    {
+      "title": "Kiosoft Primus/MXR30PD pulse (80 ms / 200 ms, Pulse Low)",
+      "url": "https://support.kiosoft.com/docs/wiring-instructions-mxr30pd-without-coin-revised-10-14-2022"
+    }
+  ]
+}

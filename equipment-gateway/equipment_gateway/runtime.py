@@ -15,8 +15,10 @@ from .adapters import load_adapter
 from .agent import AgentClient
 from .journal import Journal
 from .modbus import ModbusTransport as ModbusReader, TransportError
-from .profiles import observe, validate_bus_assignments
 from .physical import PrimitiveError
+from .profiles import observe, validate_bus_assignments
+from .modbus_site import probe_modbus_credit_pulses, validate_credit_pulse_buses
+from .site_inventory import equipment_summary, format_table, merge_equipment
 
 LOG = logging.getLogger("equipment-gateway")
 INVENTORY_INTERVAL_SECONDS = 30
@@ -24,16 +26,43 @@ MAX_INVENTORY_BYTES = 49152
 COMMAND_BATCH_SIZE = 8
 
 
+def _configure_family_profile_dirs(config: dict, config_path: Path) -> None:
+    # Vertical catalogues register themselves; core only forwards the directory knobs.
+    try:
+        from .laundry_catalogue import set_extra_profile_dirs
+    except ImportError:
+        return
+    profile_dirs = []
+    family_dir = config.get("machine_profiles_dir") or config.get("laundry_profiles_dir")
+    if family_dir is not None:
+        if not isinstance(family_dir, str) or not family_dir.strip():
+            raise ValueError("machine_profiles_dir must be a nonempty string path")
+        directory = Path(family_dir)
+        if not directory.is_absolute():
+            directory = config_path.resolve().parent / directory
+        profile_dirs.append(directory)
+    set_extra_profile_dirs(profile_dirs)
+
+
 def load_config(path):
-    config = json.loads(Path(path).read_text())
+    config_path = Path(path)
+    config = json.loads(config_path.read_text())
     if config.get("schema_version") != 2 or not isinstance(config.get("product_instance_id"), str) or not 0 < len(config["product_instance_id"]) <= 64:
         raise ValueError("Gateway config requires schema_version=2 and product_instance_id")
-    equipment = config.get("equipment", [])
-    if not isinstance(equipment, list) or len(equipment) > 128:
+    _configure_family_profile_dirs(config, config_path)
+    inline = config.get("equipment", [])
+    if inline is None:
+        inline = []
+    if not isinstance(inline, list):
+        raise ValueError("Gateway equipment must be a list")
+    equipment = merge_equipment(
+        inline,
+        equipment_dir=config.get("equipment_dir"),
+        config_path=config_path,
+    )
+    if len(equipment) > 128:
         raise ValueError("Gateway supports up to 128 equipment endpoints")
-    identifiers = [entry["equipment_id"] for entry in equipment]
-    if len(set(identifiers)) != len(identifiers) or any(not isinstance(i, str) or not 0 < len(i) <= 128 for i in identifiers):
-        raise ValueError("Equipment IDs must be unique nonempty strings")
+    config["equipment"] = equipment
     for entry in equipment:
         adapter = load_adapter(entry)
         if len(json.dumps(adapter.capabilities, allow_nan=False).encode()) > 32768:
@@ -41,10 +70,13 @@ def load_config(path):
     instruments = config.get("instruments", [])
     if not isinstance(instruments, list) or len(instruments) > 128:
         raise ValueError("Gateway supports up to 128 instruments")
+    if not equipment and not instruments:
+        raise ValueError("Gateway config requires at least one equipment endpoint or instrument")
     instrument_ids = [i["instrument_id"] for i in instruments]
     if len(set(instrument_ids)) != len(instrument_ids) or any(not isinstance(i, str) or not 0 < len(i) <= 128 for i in instrument_ids):
         raise ValueError("Instrument IDs must be unique nonempty strings")
     validate_bus_assignments([i["profile"] for i in instruments] + [entry["options"]["profile"] for entry in equipment if "profile" in entry.get("options", {})])
+    validate_credit_pulse_buses(equipment)
     for instrument in instruments:
         kind = instrument["profile"]["transport"]["kind"]
         if kind != "modbus_rtu" and instrument.get("source") != "simulated":
@@ -210,16 +242,69 @@ class Gateway:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", default=os.environ.get("EQUIPMENT_CONFIG", "/etc/equipment-gateway/config.json"))
-    parser.add_argument("--check", action="store_true")
+    parser.add_argument(
+        "--config",
+        default=os.environ.get("EQUIPMENT_CONFIG", "/var/lib/equipment-gateway/config.json"),
+    )
+    parser.add_argument("--check", action="store_true",
+                        help="Validate configuration only (does not open serial/GPIO)")
+    parser.add_argument("--probe", action="store_true",
+                        help="Open configured Modbus RTU buses and confirm the adapter answers (no relay actuation)")
     parser.add_argument("--capabilities", action="store_true")
+    parser.add_argument("--list-machine-profiles", action="store_true",
+                        help="List bundled/site machine-family profiles and exit")
+    parser.add_argument("--list-equipment", action="store_true",
+                        help="List configured equipment endpoints from --config and exit")
     args = parser.parse_args()
+
+    def show_machine_profiles():
+        from .laundry_catalogue import list_machine_profiles, set_extra_profile_dirs
+        if Path(args.config).is_file():
+            load_config(args.config)
+        else:
+            set_extra_profile_dirs([])
+        print(format_table(
+            list_machine_profiles(),
+            ["machine_profile", "manufacturer", "activation", "status", "duration_ms", "gap_ms", "aliases"],
+        ))
+
+    inventory_columns = [
+        "equipment_id", "bay", "label", "adapter", "machine_profile",
+        "backend", "device", "address", "relay", "chip", "line",
+    ]
+
+    if args.list_machine_profiles and not args.list_equipment and not args.check and not args.capabilities and not args.probe:
+        show_machine_profiles()
+        return
     config = load_config(args.config)
+    if args.list_machine_profiles:
+        show_machine_profiles()
+        if not args.list_equipment and not args.check and not args.capabilities and not args.probe:
+            return
+    if args.list_equipment or args.check or args.probe:
+        print(format_table(
+            equipment_summary(config.get("equipment", [])),
+            inventory_columns,
+        ))
     if args.check:
-        print("equipment-gateway configuration valid")
+        print(f"equipment-gateway configuration valid ({len(config.get('equipment', []))} equipment, version {__version__})")
+        if not args.probe:
+            return
+    if args.probe:
+        logging.basicConfig(level=logging.INFO)
+        results = probe_modbus_credit_pulses(config.get("equipment", []))
+        if not results:
+            print("modbus probe: no Modbus credit_pulse backends configured")
+            raise SystemExit(2)
+        print(format_table(results, ["equipment_id", "backend", "device", "address", "relay", "ok", "detail"]))
+        if not all(row.get("ok") for row in results):
+            raise SystemExit(1)
+        print(f"modbus probe ok ({len(results)} endpoint(s), version {__version__})")
         return
     if args.capabilities:
         print(json.dumps({entry["equipment_id"]: load_adapter(entry).capabilities for entry in config.get("equipment", [])}, indent=2))
+        return
+    if args.list_equipment or args.list_machine_profiles:
         return
     logging.basicConfig(level=logging.INFO)
     state = Path(os.environ.get("EQUIPMENT_STATE_DIR", "/var/lib/equipment-gateway"))

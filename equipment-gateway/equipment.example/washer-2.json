@@ -1,0 +1,14 @@
+{
+  "equipment_id": "washer-2",
+  "bay": "A2",
+  "label": "Dexter A-series",
+  "adapter": "equipment_gateway.integrations.laundry:PulseActivated",
+  "options": {
+    "machine_profile": "Dexter - Pulse Activated",
+    "credit_pulse": {
+      "chip": "/dev/gpiochip0",
+      "line": 22,
+      "consumer": "rinsepilot-washer-2"
+    }
+  }
+}

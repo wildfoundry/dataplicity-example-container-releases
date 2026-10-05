@@ -1,0 +1,21 @@
+{
+  "machine_profile": "IPSO - Pulse Activated",
+  "manufacturer": "IPSO",
+  "model": "Pulse Activated",
+  "activation": "credit_pulse",
+  "default_duration_seconds": 0.1,
+  "default_gap_seconds": 0.1,
+  "default_pulses_per_vend": 1,
+  "default_active_high": true,
+  "channel": "credit-pulse",
+  "status": "field_candidate",
+  "brands": ["IPSO", "Alliance Laundry Systems"],
+  "aliases": ["ipso-pulse"],
+  "notes": "Alliance brand listed with Speed Queen/Huebsch/UniMac on PayRange Method 1 coin-pulse harnesses. Use 100 ms on / 100 ms off unless site measurement differs.",
+  "sources": [
+    {
+      "title": "PayRange BluKey Method 1 brands include Ipso",
+      "url": "https://payrange.com/for_download/manuals/PayRange-Laundry-Resources/Laundry-Installation-Guides/Laundrylux/BkPro-RelayModule-HV_LV-PN-11.02043-xx.pdf"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "machine_profile": "Huebsch - Pulse Activated",
+  "manufacturer": "Huebsch",
+  "model": "Pulse Activated",
+  "activation": "start_pulse",
+  "default_duration_seconds": 0.1,
+  "default_gap_seconds": 0.1,
+  "default_pulses_per_vend": 1,
+  "default_active_high": true,
+  "channel": "credit-pulse",
+  "status": "field_candidate",
+  "brands": ["Huebsch", "Alliance Laundry Systems"],
+  "aliases": ["huebsch-pulse"],
+  "notes": "Alliance brand sibling of Speed Queen. Same public start-pulse / coin-drop emulation path; PayRange lists Huebsch with Alliance K11/K12 100 ms pulse guidance.",
+  "sources": [
+    {
+      "title": "PayRange BluKey Method 1 brands include Huebsch; K11/K12 100 ms",
+      "url": "https://payrange.com/for_download/manuals/PayRange-Laundry-Resources/Laundry-Installation-Guides/Laundrylux/BkPro-RelayModule-HV_LV-PN-11.02043-xx.pdf"
+    }
+  ]
+}

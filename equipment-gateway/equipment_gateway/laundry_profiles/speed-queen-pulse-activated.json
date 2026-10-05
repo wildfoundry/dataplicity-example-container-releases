@@ -1,0 +1,25 @@
+{
+  "machine_profile": "Speed Queen - Pulse Activated",
+  "manufacturer": "Speed Queen",
+  "model": "Pulse Activated",
+  "activation": "start_pulse",
+  "default_duration_seconds": 0.1,
+  "default_gap_seconds": 0.1,
+  "default_pulses_per_vend": 1,
+  "default_active_high": true,
+  "channel": "credit-pulse",
+  "status": "field_candidate",
+  "brands": ["Speed Queen", "Alliance Laundry Systems"],
+  "aliases": ["speed-queen-pulse", "SQ-pulse"],
+  "notes": "Alliance MDC/Quantum start-pulse / coin-pulse family. OEM manuals define Start Pulse Mode (single/multi) and PLSE value but not milliseconds; 100 ms on / 100 ms off comes from PayRange Alliance K11/K12 harness guidance. Machine must be programmed so one pulse (or N pulses) satisfies vend.",
+  "sources": [
+    {
+      "title": "Alliance Speed Queen dryer programming (start pulse mode)",
+      "url": "https://docs.alliancelaundry.com/tech_pdf/Production/D518600en.pdf"
+    },
+    {
+      "title": "PayRange BluKey pulse timings (Alliance K11/K12 = 100 ms / 100 ms)",
+      "url": "https://payrange.com/for_download/manuals/PayRange-Laundry-Resources/Laundry-Installation-Guides/Laundrylux/BkPro-RelayModule-HV_LV-PN-11.02043-xx.pdf"
+    }
+  ]
+}

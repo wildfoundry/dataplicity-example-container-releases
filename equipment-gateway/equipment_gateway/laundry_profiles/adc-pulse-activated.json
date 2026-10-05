@@ -1,0 +1,25 @@
+{
+  "machine_profile": "ADC - Pulse Activated",
+  "manufacturer": "ADC",
+  "model": "Pulse Activated",
+  "activation": "credit_pulse",
+  "default_duration_seconds": 0.05,
+  "default_gap_seconds": 0.3,
+  "default_pulses_per_vend": 1,
+  "default_active_high": true,
+  "channel": "credit-pulse",
+  "status": "field_candidate",
+  "brands": ["American Dryer Corporation", "ADC"],
+  "aliases": ["adc-pulse", "american-dryer-pulse"],
+  "notes": "Phase 5/7 dryers commonly accept coin-input emulation; readers send one pulse and dryer firmware owns time-per-coin. Exact ms not in ADC manuals reviewed; PayRange Method 1 universal table (50 ms / 300 ms) lists ADC alongside Alliance/Dexter/Maytag-ADC-built.",
+  "sources": [
+    {
+      "title": "Laundroworks ADC dryers (one pulse; time set on machine)",
+      "url": "https://support.laundroworks.com/portal/en/kb/articles/adc-all-dryers"
+    },
+    {
+      "title": "PayRange Method 1 brands include ADC; universal 50 ms / 300 ms",
+      "url": "https://payrange.com/for_download/manuals/PayRange-Laundry-Resources/Laundry-Installation-Guides/Laundrylux/BkPro-RelayModule-HV_LV-PN-11.02043-xx.pdf"
+    }
+  ]
+}

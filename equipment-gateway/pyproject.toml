@@ -4,16 +4,22 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dataplicity-equipment-gateway"
-version = "0.2.1"
+version = "0.2.4"
 description = "Credential-free equipment adapters for Dataplicity Product Runtime"
 requires-python = ">=3.11"
 dependencies = ["jsonschema>=4.23,<5", "pyserial==3.5"]
 
 [project.scripts]
-equipment-gateway = "equipment_gateway.runtime:main"
+equipment-gateway = "equipment_gateway.entrypoint:main"
 
 [tool.setuptools.package-data]
-equipment_gateway = ["contracts/*.json"]
+equipment_gateway = [
+  "contracts/*.json",
+  "laundry_profiles/*.json",
+  "laundry_profiles/*.md",
+  "site_templates/*/*.json",
+  "site_templates/*/equipment/*.json",
+]
 
 [tool.setuptools.packages.find]
 include = ["equipment_gateway*"]

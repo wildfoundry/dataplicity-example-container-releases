@@ -1,0 +1,21 @@
+{
+  "machine_profile": "Electrolux Compass/Clarus Washer - Serial",
+  "manufacturer": "Electrolux",
+  "model": "Compass/Clarus Serial",
+  "activation": "serial_native",
+  "default_duration_seconds": 0.05,
+  "default_gap_seconds": 0.3,
+  "default_pulses_per_vend": 1,
+  "default_active_high": true,
+  "channel": "serial-card",
+  "status": "catalogue_only",
+  "brands": ["Electrolux", "Wascomat"],
+  "aliases": ["electrolux-compass-serial", "wascomat-compass-serial"],
+  "notes": "Wascomat/Electrolux Compass and Clarus washers use serial card-reader protocols for vend pricing — not coin-pulse GPIO. Catalogue entry prevents mis-assignment to PulseActivated. Duration/gap fields are placeholders only.",
+  "sources": [
+    {
+      "title": "Laundroworks Electrolux Compass/Clarus washers (serial)",
+      "url": "https://support.laundroworks.com/portal/en/kb/articles/electrolux-compass-control-washers"
+    }
+  ]
+}
