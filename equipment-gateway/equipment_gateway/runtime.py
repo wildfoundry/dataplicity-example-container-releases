@@ -130,10 +130,10 @@ class Gateway:
                     self.agent.call("ReportCommandResult", invocation_id=invocation_id, success=False,
                                     rejected=True, error="Command deadline expired or lacks timezone")
                     return
-            # The agent is the authoritative cancellation/deadline gate. Check
-            # its returned state before any local dispatch.
-            response = self.agent.call("MarkCommandExecuting", invocation_id=invocation_id)
-            if response["record"]["status"] != "executing":
+            # Newer agents refuse here when the command was cancelled or the
+            # deadline has already passed. Agents that do not implement the
+            # method have no such gate; the local deadline check above is enough.
+            if not self._agent_allows_execution(invocation_id):
                 return
             row = self.journal.execute(invocation_id, action, payload, self.adapters[equipment_id], instance_id=self.instance_id, correlation_id=command.get("correlation_id", ""))
         except (ValidationError, KeyError, PrimitiveError) as exc:
@@ -147,6 +147,25 @@ class Gateway:
                             result={"outcome": "unknown", "requires_reconciliation": True}, error=str(exc))
             return
         self.report(row)
+
+    def _agent_allows_execution(self, invocation_id):
+        try:
+            response = self.agent.call("MarkCommandExecuting", invocation_id=invocation_id)
+        except RuntimeError as exc:
+            if "Method not found" in str(exc):
+                return True
+            raise
+        return response["record"]["status"] == "executing"
+
+    def dispatch_commands(self):
+        pending = self.agent.call("GetPendingCommands", limit=COMMAND_BATCH_SIZE)["commands"]
+        command_deadline = time.monotonic() + 2
+        for command in pending:
+            # An effect already underway must finish and be journalled; stop
+            # starting additional effects once this tick's budget expires.
+            if time.monotonic() >= command_deadline:
+                break
+            self.handle(command)
 
     def poll_instruments(self, now):
         # A disconnected bus must not monopolise equipment command handling.
@@ -207,20 +226,15 @@ class Gateway:
         self.agent.event("equipment.gateway_inventory", payload, instance_id=self.instance_id)
 
     def tick(self):
+        # Take physical commands before inventory or outcome replay. A failed
+        # replay must not burn the command deadline before the gateway looks.
+        self.dispatch_commands()
         if time.monotonic() >= self.next_inventory:
             self.publish_inventory()
             self.next_inventory = time.monotonic() + INVENTORY_INTERVAL_SECONDS
         # Replay application outcomes, never physical commands, after a restart.
         for row in self.journal.unreported():
             self.report(row)
-        pending = self.agent.call("GetPendingCommands", limit=COMMAND_BATCH_SIZE)["commands"]
-        command_deadline = time.monotonic() + 2
-        for command in pending:
-            # An effect already underway must finish and be journalled; stop
-            # starting additional effects once this tick's budget expires.
-            if time.monotonic() >= command_deadline:
-                break
-            self.handle(command)
         now = time.time()
         equipment = list(self.adapters.items())
         state_deadline = time.monotonic() + 2

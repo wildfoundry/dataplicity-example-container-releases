@@ -350,6 +350,74 @@ class RuntimeTests(unittest.TestCase):
             self.assertEqual(journal.unreported(), [])
             gateway.close()
 
+    def test_vend_runs_when_agent_has_no_executing_gate(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            journal = Journal(Path(tmp) / "j.sqlite3")
+            agent = FakeAgent()
+            config = load_config(ROOT / "config.example.json")
+            gateway = Gateway(config, agent, journal)
+            command = dict(
+                invocation_id="desk-vend",
+                product_instance_id=config["product_instance_id"],
+                command_key="vend",
+                device_action_key="vend",
+                safety="unsafe_to_duplicate",
+                deadline="2099-01-01T00:00:00+00:00",
+                input=payload(),
+            )
+
+            def call(method, **params):
+                if method == "MarkCommandExecuting":
+                    raise RuntimeError("Method not found: MarkCommandExecuting")
+                return FakeAgent.call(agent, method, **params)
+
+            agent.call = call
+            try:
+                gateway.handle(command)
+                self.assertEqual(gateway.adapters["washer-1"].calls, 1)
+                reported = [params for method, params in agent.calls if method == "ReportCommandResult"]
+                self.assertEqual(reported[-1]["success"], True)
+                self.assertEqual(reported[-1]["rejected"], False)
+                agent.call = FakeAgent.call.__get__(agent, FakeAgent)
+                agent.status = "cancelled"
+                gateway.handle({**command, "invocation_id": "cancelled-vend", "effect_id": "effect-2"})
+                self.assertEqual(gateway.adapters["washer-1"].calls, 1)
+            finally:
+                gateway.close()
+
+    def test_pending_vend_is_taken_before_outcome_replay(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            journal = Journal(Path(tmp) / "j.sqlite3")
+            agent = FakeAgent()
+            config = load_config(ROOT / "config.example.json")
+            gateway = Gateway(config, agent, journal)
+            command = dict(
+                invocation_id="before-replay",
+                product_instance_id=config["product_instance_id"],
+                command_key="vend",
+                safety="unsafe_to_duplicate",
+                deadline="2099-01-01T00:00:00+00:00",
+                input=payload(),
+            )
+
+            def call(method, **params):
+                if method == "GetPendingCommands":
+                    return {"commands": [command]}
+                return FakeAgent.call(agent, method, **params)
+
+            agent.call = call
+
+            def replay_blocked():
+                raise OSError("outcome replay blocked")
+
+            gateway.journal.unreported = replay_blocked
+            try:
+                with self.assertRaises(OSError):
+                    gateway.tick()
+                self.assertEqual(gateway.adapters["washer-1"].calls, 1)
+            finally:
+                gateway.close()
+
 
 if __name__ == "__main__":
     unittest.main()
