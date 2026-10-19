@@ -1,0 +1,15 @@
+{
+  "settings": [
+    {
+      "key": "controller_protocol",
+      "label": "Controller protocol",
+      "description": "Set at install time. One protocol per controller. The equipment gateway reads this value and runs the matching protocol.",
+      "value_kind": "enum",
+      "options": [
+        {"value": "local-simulator", "label": "Local simulator"},
+        {"value": "modbus-relay-pulse", "label": "Modbus relay pulse"},
+        {"value": "host-timed-coin-pulse", "label": "Host-timed coin pulse"}
+      ]
+    }
+  ]
+}
