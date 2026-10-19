@@ -17,6 +17,7 @@ from .journal import Journal
 from .modbus import ModbusTransport as ModbusReader, TransportError
 from .physical import PrimitiveError
 from .profiles import observe, validate_bus_assignments
+from .controller_protocol import publish_simulated_cycle, select_adapter
 from .modbus_site import probe_modbus_credit_pulses, validate_credit_pulse_buses
 from .site_inventory import equipment_summary, format_table, merge_equipment
 
@@ -90,6 +91,7 @@ class Gateway:
         self.instance_id = config["product_instance_id"]
         self.readers = {}
         self.adapters = {entry["equipment_id"]: load_adapter(entry, self.readers) for entry in config.get("equipment", [])}
+        self._simulators = {}
         self.next_poll = {}
         self.next_inventory = 0
         self.profile_points = [(instrument, point) for instrument in config.get("instruments", [])
@@ -135,7 +137,14 @@ class Gateway:
             # method have no such gate; the local deadline check above is enough.
             if not self._agent_allows_execution(invocation_id):
                 return
-            row = self.journal.execute(invocation_id, action, payload, self.adapters[equipment_id], instance_id=self.instance_id, correlation_id=command.get("correlation_id", ""))
+            adapter, refusal, simulate_cycle = select_adapter(self, equipment_id)
+            if refusal:
+                self.agent.call(
+                    "ReportCommandResult", invocation_id=invocation_id, success=False,
+                    rejected=True, error=refusal,
+                )
+                return
+            row = self.journal.execute(invocation_id, action, payload, adapter, instance_id=self.instance_id, correlation_id=command.get("correlation_id", ""))
         except (ValidationError, KeyError, PrimitiveError) as exc:
             self.agent.call("ReportCommandResult", invocation_id=invocation_id, success=False,
                             rejected=True, error=str(exc))
@@ -146,6 +155,8 @@ class Gateway:
             self.agent.call("ReportCommandResult", invocation_id=invocation_id, success=False,
                             result={"outcome": "unknown", "requires_reconciliation": True}, error=str(exc))
             return
+        if simulate_cycle and row.get("certainty") == "accepted":
+            publish_simulated_cycle(self, equipment_id)
         self.report(row)
 
     def _agent_allows_execution(self, invocation_id):

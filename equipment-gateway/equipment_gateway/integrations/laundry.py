@@ -441,6 +441,105 @@ class PulseActivated:
             close()
 
 
+# Our own simulated pulse width. Not a brand timing.
+LOCAL_SIMULATOR_PULSE_SECONDS = 0.1
+
+
+class LocalSimulator:
+    """Controller protocol that reports a labelled simulated cycle and touches no I/O.
+
+    The acknowledgement names the equipment and the pulse duration. Cycle events
+    are pulse, running, progress, then complete. Nothing here opens a serial
+    port, GPIO chip, or Modbus relay.
+    """
+
+    def __init__(self):
+        self.calls = 0
+        self.capabilities = capabilities(
+            properties=("availability", "operating_state", "remaining_seconds", "stage"),
+            actions=("vend",),
+            provenance="simulated",
+        )
+        self._observed = {
+            "availability": "available",
+            "operating_state": "idle",
+            "remaining_seconds": 0,
+            "stage": "simulated-idle",
+        }
+
+    def validate(self, action, payload):
+        if action != "vend":
+            raise ValueError("Local simulator only supports vend")
+        validate_action(action, payload)
+        if payload["machine_id"] != payload["equipment_id"]:
+            raise ValueError("Semantic machine target differs from configured equipment")
+
+    def execute(self, action, payload):
+        self.validate(action, payload)
+        self.calls += 1
+        equipment_id = payload["equipment_id"]
+        duration = LOCAL_SIMULATOR_PULSE_SECONDS
+        LOG.info(
+            "local_simulator_pulse equipment_id=%s duration_s=%.3f simulated=true uart=false",
+            equipment_id,
+            duration,
+        )
+        self._observed = {
+            "availability": "available",
+            "operating_state": "complete",
+            "remaining_seconds": 0,
+            "stage": "simulated-complete",
+        }
+        return Outcome(
+            "accepted",
+            "local_simulator_pulse_acknowledged",
+            {
+                "service_delivered": True,
+                "simulated": True,
+                "equipment_id": equipment_id,
+                "duration_seconds": duration,
+                "evidence": {
+                    "kind": "local_simulator",
+                    "label": "simulated",
+                    "equipment_id": equipment_id,
+                    "duration_seconds": duration,
+                    "pulse": "emitted",
+                },
+            },
+        )
+
+    def cycle_snapshots(self, equipment_id, *, observed_at, now):
+        phases = (
+            ("running", "running", 2, "simulated-pulse"),
+            ("running", "running", 1, "simulated-cycle"),
+            ("available", "complete", 0, "simulated-complete"),
+        )
+        snapshots = []
+        for availability, operating_state, remaining, stage in phases:
+            values = {
+                "availability": availability,
+                "operating_state": operating_state,
+                "remaining_seconds": remaining,
+                "stage": stage,
+            }
+            snapshots.append({
+                "equipment_id": equipment_id,
+                "simulated": True,
+                "state": state_envelope(
+                    CONTRACT, self.capabilities, values, observed_at=observed_at, now=now,
+                ),
+            })
+        return snapshots
+
+    def state(self, *, observed_at, now):
+        return state_envelope(
+            CONTRACT, self.capabilities, self.observe(), observed_at=observed_at, now=now,
+        )
+
+    def observe(self):
+        return dict(self._observed)
+
+
 def manufacturer_adapter(manufacturer):
     raise ValueError(
         f"{manufacturer}: no verified protocol/profile is bundled; "
