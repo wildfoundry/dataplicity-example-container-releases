@@ -1,4 +1,5 @@
 """Local simulator is a labelled cycle on the real command path, with no I/O."""
+from contextlib import contextmanager
 from pathlib import Path
 import json
 import os
@@ -6,12 +7,26 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from equipment_gateway import controller_protocol
 from equipment_gateway.integrations.laundry import LOCAL_SIMULATOR_PULSE_SECONDS, LocalSimulator
 from equipment_gateway.journal import Journal
 from equipment_gateway.runtime import Gateway, load_config
 from test_gateway import FakeAgent, payload
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+@contextmanager
+def parameter(tmp, value):
+    """Write the agent's mounted parameters file the way the supervisor does."""
+    root = Path(tmp) / "config"
+    root.mkdir(exist_ok=True)
+    (root / "parameters.json").write_text(json.dumps({
+        "generation": 1,
+        "settings": {"controller_protocol": {"key": "controller_protocol", "value": value, "value_kind": "enum"}},
+    }))
+    with patch.dict(os.environ, {"DP_CONFIG_DIR": str(root)}):
+        yield
 
 
 class LocalSimulatorTests(unittest.TestCase):
@@ -44,7 +59,7 @@ class LocalSimulatorTests(unittest.TestCase):
                     "safety": "unsafe_to_duplicate",
                     "input": payload(),
                 }
-                with patch.dict(os.environ, {"CONTROLLER_PROTOCOL": "local-simulator"}):
+                with parameter(tmp, "local-simulator"):
                     gateway.handle(command)
                 self.assertEqual(physical.calls, 0)
                 states = [data for kind, data, _ in agent.events if kind == "equipment.state"]
@@ -72,7 +87,7 @@ class LocalSimulatorTests(unittest.TestCase):
             gateway = Gateway(config, agent, Journal(Path(tmp) / "effects.sqlite3"))
             try:
                 physical = gateway.adapters["washer-1"]
-                with patch.dict(os.environ, {"CONTROLLER_PROTOCOL": "girbau-serial"}):
+                with parameter(tmp, "girbau-serial"):
                     gateway.handle({
                         "invocation_id": "vend-unknown",
                         "product_instance_id": config["product_instance_id"],
@@ -95,7 +110,7 @@ class LocalSimulatorTests(unittest.TestCase):
             gateway = Gateway(config, agent, Journal(Path(tmp) / "effects.sqlite3"))
             try:
                 physical = gateway.adapters["washer-1"]
-                with patch.dict(os.environ, {"CONTROLLER_PROTOCOL": "modbus-relay-pulse"}):
+                with parameter(tmp, "modbus-relay-pulse"):
                     gateway.handle({
                         "invocation_id": "vend-relay",
                         "product_instance_id": config["product_instance_id"],
@@ -116,8 +131,7 @@ class LocalSimulatorTests(unittest.TestCase):
             gateway = Gateway(config, agent, Journal(Path(tmp) / "effects.sqlite3"))
             try:
                 physical = gateway.adapters["washer-1"]
-                with patch.dict(os.environ, {"CONTROLLER_PROTOCOL": ""}, clear=False):
-                    os.environ.pop("CONTROLLER_PROTOCOL", None)
+                with patch.dict(os.environ, {"DP_CONFIG_DIR": str(Path(tmp) / "no-parameters")}):
                     gateway.handle({
                         "invocation_id": "vend-payload",
                         "product_instance_id": config["product_instance_id"],
@@ -132,3 +146,16 @@ class LocalSimulatorTests(unittest.TestCase):
                 self.assertEqual(states, [])
             finally:
                 gateway.close()
+
+    def test_declared_choices_are_exactly_the_implemented_protocols(self):
+        declared = json.loads((ROOT / "device-class-parameters.json").read_text())["settings"]
+        self.assertEqual([row["key"] for row in declared], [controller_protocol.PARAMETER_KEY])
+        self.assertEqual(declared[0]["value_kind"], "enum")
+        self.assertEqual(
+            [option["value"] for option in declared[0]["options"]],
+            [
+                controller_protocol.LOCAL_SIMULATOR,
+                controller_protocol.MODBUS_RELAY_PULSE,
+                controller_protocol.HOST_TIMED_COIN_PULSE,
+            ],
+        )

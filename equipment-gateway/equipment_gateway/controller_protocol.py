@@ -1,14 +1,21 @@
 """Laundry controller protocols for the equipment-gateway container.
 
-The supervisor starts this container with CONTROLLER_PROTOCOL set to the
-customer's install choice. The agent does not interpret that value. A vend
-command cannot override it.
+The protocol is a device-class parameter. The customer sets its value for each
+controller in the portal. The agent writes desired parameters to
+``$DP_CONFIG_DIR/parameters.json`` and mounts it read-only into this container.
+The platform does not interpret the value; this module does. A vend command
+cannot override it.
 """
 
 from __future__ import annotations
 
+import json
 import os
 import time
+from pathlib import Path
+
+PARAMETER_KEY = "controller_protocol"
+DEFAULT_CONFIG_DIR = "/etc/dataplicity/config"
 
 LOCAL_SIMULATOR = "local-simulator"
 MODBUS_RELAY_PULSE = "modbus-relay-pulse"
@@ -20,11 +27,22 @@ _BACKEND = {
 }
 
 
+def _parameter_value() -> str:
+    root = Path(os.environ.get("DP_CONFIG_DIR") or DEFAULT_CONFIG_DIR)
+    try:
+        data = json.loads((root / "parameters.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return ""
+    entry = (data.get("settings") or {}).get(PARAMETER_KEY) if isinstance(data, dict) else None
+    value = entry.get("value") if isinstance(entry, dict) else None
+    return value.strip() if isinstance(value, str) else ""
+
+
 def configured_protocol(gateway) -> str:
-    """Protocol from container config. Env wins over the site config file."""
-    env = os.environ.get("CONTROLLER_PROTOCOL", "").strip()
-    if env:
-        return env
+    """Device-class parameter first, then the site config file."""
+    value = _parameter_value()
+    if value:
+        return value
     config = getattr(gateway, "config", None) or {}
     return str(config.get("controller_protocol") or "").strip()
 
