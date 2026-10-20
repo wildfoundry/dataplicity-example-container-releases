@@ -350,6 +350,52 @@ class RuntimeTests(unittest.TestCase):
             self.assertEqual(journal.unreported(), [])
             gateway.close()
 
+    def test_durable_result_replays_after_deadline_without_another_effect(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            agent = FakeAgent()
+            config = load_config(ROOT / "config.example.json")
+            gateway = Gateway(config, agent, Journal(Path(tmp) / "j.sqlite3"))
+            command = dict(invocation_id="retry-result", product_instance_id=config["product_instance_id"],
+                           command_key="vend", input=payload(), safety="unsafe_to_duplicate")
+            try:
+                agent.fail_report = True
+                with self.assertRaises(OSError):
+                    gateway.handle(command)
+                agent.fail_report = False
+                agent.status = "cancelled"
+                gateway.handle({**command, "deadline": "2000-01-01T00:00:00Z"})
+                reports = [p for method, p in agent.calls if method == "ReportCommandResult"]
+                self.assertTrue(reports[-1]["success"])
+                self.assertFalse(reports[-1]["rejected"])
+                self.assertEqual(gateway.adapters["washer-1"].calls, 1)
+                self.assertEqual(gateway.journal.unreported(), [])
+                gateway.handle({**command, "input": {**payload(), "amount_minor": 900}})
+                self.assertEqual(gateway.adapters["washer-1"].calls, 1)
+                self.assertTrue(agent.calls[-1][1]["result"]["requires_reconciliation"])
+            finally:
+                gateway.close()
+
+    def test_event_outbox_failure_does_not_block_command_result(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            agent = FakeAgent()
+            config = load_config(ROOT / "config.example.json")
+            gateway = Gateway(config, agent, Journal(Path(tmp) / "j.sqlite3"))
+            command = dict(invocation_id="event-failure", product_instance_id=config["product_instance_id"],
+                           command_key="vend", input=payload(), safety="unsafe_to_duplicate")
+            try:
+                with patch.object(agent, "event", side_effect=RuntimeError("event outbox unavailable")):
+                    with self.assertRaises(RuntimeError):
+                        gateway.handle(command)
+                reports = [p for method, p in agent.calls if method == "ReportCommandResult"]
+                self.assertTrue(reports[-1]["success"])
+                self.assertEqual(gateway.adapters["washer-1"].calls, 1)
+                self.assertEqual(len(gateway.journal.unreported()), 1)
+                gateway.handle({**command, "deadline": "2000-01-01T00:00:00Z"})
+                self.assertEqual(gateway.adapters["washer-1"].calls, 1)
+                self.assertEqual(gateway.journal.unreported(), [])
+            finally:
+                gateway.close()
+
     def test_vend_runs_when_agent_has_no_executing_gate(self):
         with tempfile.TemporaryDirectory() as tmp:
             journal = Journal(Path(tmp) / "j.sqlite3")
