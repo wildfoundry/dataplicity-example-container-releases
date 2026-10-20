@@ -105,12 +105,13 @@ class Gateway:
                   "outcome": row["certainty"], "reason": row["reason"],
                   "invocation_id": row["invocation_id"],
                   "requires_reconciliation": row["certainty"] == "unknown"}
-        self.agent.event("equipment.command_outcome", result,
-                         event_id=str(uuid.uuid5(uuid.NAMESPACE_URL, f"equipment:{self.instance_id}:{row['invocation_id']}")),
-                         instance_id=self.instance_id, correlation_id=command.get("correlation_id", ""))
+        # Outcome transport must not depend on event-outbox availability.
         self.agent.call("ReportCommandResult", invocation_id=row["invocation_id"],
                         success=row["certainty"] == "accepted", rejected=row["certainty"] == "definitely_rejected",
                         result=result, error=row["reason"] if row["certainty"] != "accepted" else "")
+        self.agent.event("equipment.command_outcome", result,
+                         event_id=str(uuid.uuid5(uuid.NAMESPACE_URL, f"equipment:{self.instance_id}:{row['invocation_id']}")),
+                         instance_id=self.instance_id, correlation_id=command.get("correlation_id", ""))
         self.journal.mark_reported(row["invocation_id"])
 
     def handle(self, command):
@@ -126,6 +127,13 @@ class Gateway:
                             rejected=True, error="Physical commands must be unsafe_to_duplicate")
             return
         try:
+            if self.journal.lookup(invocation_id):
+                # Revalidate immutable identity, then replay evidence only. A
+                # deadline/cancellation gates new effects, never an old result.
+                row = self.journal.execute(invocation_id, action, payload, self.adapters[equipment_id],
+                                           instance_id=self.instance_id, correlation_id=command.get("correlation_id", ""))
+                self.report(row)
+                return
             if command.get("deadline"):
                 deadline = datetime.fromisoformat(command["deadline"].replace("Z", "+00:00"))
                 if deadline.tzinfo is None or deadline <= datetime.now(timezone.utc):
@@ -155,9 +163,9 @@ class Gateway:
             self.agent.call("ReportCommandResult", invocation_id=invocation_id, success=False,
                             result={"outcome": "unknown", "requires_reconciliation": True}, error=str(exc))
             return
+        self.report(row)
         if simulate_cycle and row.get("certainty") == "accepted":
             publish_simulated_cycle(self, equipment_id)
-        self.report(row)
 
     def _agent_allows_execution(self, invocation_id):
         try:
