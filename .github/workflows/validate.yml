@@ -17,7 +17,7 @@ concurrency:
 jobs:
   metadata:
     name: Repository metadata
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.GENERAL_RUNNER || 'wf-general' }}
     timeout-minutes: 5
     steps:
       - name: Check out repository

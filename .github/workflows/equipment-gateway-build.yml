@@ -25,7 +25,7 @@ jobs:
             runner: ubuntu-latest
           - architecture: arm64
             runner: ubuntu-24.04-arm
-    runs-on: ${{ matrix.runner }}
+    runs-on: ${{ startsWith(matrix.runner, 'ubuntu-') && !contains(matrix.runner, '-arm') && !github.event.pull_request.head.repo.fork && (vars.GENERAL_RUNNER || 'wf-general') || matrix.runner }}
     permissions:
       contents: read
     steps:
@@ -58,7 +58,7 @@ jobs:
           path: native-assets/
   assemble:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.GENERAL_RUNNER || 'wf-general' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
